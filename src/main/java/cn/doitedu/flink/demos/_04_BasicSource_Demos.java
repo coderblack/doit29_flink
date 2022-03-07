@@ -4,6 +4,7 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.RandomUtils;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.functions.FilterFunction;
+import org.apache.flink.api.common.functions.RuntimeContext;
 import org.apache.flink.api.common.io.FilePathFilter;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.api.common.typeinfo.BasicTypeInfo;
@@ -191,6 +192,8 @@ class MyRichParallelSourceFunction extends RichParallelSourceFunction<String> {
     public void open(Configuration parameters) throws Exception {
         super.open(parameters);
     }
+
+
 
 
     @Override
