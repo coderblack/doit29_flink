@@ -89,9 +89,9 @@ public class _04_BasicSource_Demos {
 
 
         // 添加自定义的数据源
-        env.addSource(new MyParallelSourceFunction()).setParallelism(2)
+        DataStreamSource<String> source = env.addSource(new MyParallelSourceFunction()).setParallelism(2);
         // TODO 练习题：过滤掉所有年龄小于20岁的访客，然后实时统计各访客的年龄最大值，年龄最小值，年龄平均值，到目前为止的访客总数（不用对id去重）
-        /*.print()*/;
+        /*.print()*/
 
 
         env.execute();

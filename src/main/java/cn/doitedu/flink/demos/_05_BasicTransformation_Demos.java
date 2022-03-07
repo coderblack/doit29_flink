@@ -1,5 +1,6 @@
 package cn.doitedu.flink.demos;
 
+import com.alibaba.fastjson.JSON;
 import org.apache.flink.api.common.functions.FilterFunction;
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.functions.MapFunction;
@@ -70,7 +71,6 @@ public class _05_BasicTransformation_Demos {
 
         /**
          * 随堂小练习
-         *
          */
         DataStreamSource<String> source2 = env
                 .fromCollection(
@@ -78,10 +78,22 @@ public class _05_BasicTransformation_Demos {
                                 "{\"name\":\"aaa\",\"age\":18,\"id\":1}",
                                 "{\"name\":\"bbb\",\"age\":28,\"id\":2}",
                                 "{\"name\":\"ccc\",\"age\":38,\"id\":3}",
-                                "{\"name\":\"ddd\",\"age\":48,\"id\":4}" )
+                                "{\"name\":\"ddd\",\"age\":48,\"id\":4}")
                 );
 
-        // TODO  对上面的数据流转换成Person数据流,并过滤掉所有年龄<20的人，打印输出
+        // 对上面的数据流转换成Person数据流,并过滤掉所有年龄<20的人，打印输出
+        source2.map(new MapFunction<String, Person>() {
+                    @Override
+                    public Person map(String value) throws Exception {
+                        return JSON.parseObject(value, Person.class);
+                    }
+                })
+                .filter(new FilterFunction<Person>() {
+                    @Override
+                    public boolean filter(Person value) throws Exception {
+                        return value.getAge()>=20;
+                    }
+                }).print();
 
         env.execute();
 
