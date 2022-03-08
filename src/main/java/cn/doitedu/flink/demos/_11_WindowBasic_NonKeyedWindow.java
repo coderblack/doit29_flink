@@ -24,9 +24,7 @@ public class _11_WindowBasic_NonKeyedWindow {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         //SingleOutputStreamOperator<Long> source = env.socketTextStream("localhost", 9099).map(s -> Long.parseLong(s));
 
-
         DataStreamSource<Long> source = env.addSource(new TimeDataSource());
-
 
         // 计数窗口-滚动窗口，  窗口长度为：3（条数据）
         SingleOutputStreamOperator<Long> sum = source.countWindowAll(3).sum(0);
@@ -34,7 +32,6 @@ public class _11_WindowBasic_NonKeyedWindow {
 
         // 计数窗口-滑动窗口， 窗口长度为：3， 滑动步长：1 （意味着每来1条数据就会计算一次）
         source.countWindowAll(3, 3).sum(0)/*.print()*/;
-
 
         // 在底层，一条数据该划分到哪一个窗口，是用 WindowAssigner决定的
         // 滚动处理时间窗口
@@ -52,8 +49,6 @@ public class _11_WindowBasic_NonKeyedWindow {
                     }
                 })
                 .print();
-
-
         env.execute();
     }
 }
