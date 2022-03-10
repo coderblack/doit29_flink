@@ -13,6 +13,7 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.ProcessFunction;
 import org.apache.flink.streaming.api.functions.windowing.ProcessWindowFunction;
 import org.apache.flink.streaming.api.functions.windowing.WindowFunction;
+import org.apache.flink.streaming.api.windowing.assigners.SlidingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.api.windowing.windows.GlobalWindow;
@@ -64,7 +65,8 @@ public class ApiExersize_6_WindowAggregationFunctions {
 
         // 时间（EventTime)窗口聚合
         // 分数之积
-        keyedStream.window(TumblingEventTimeWindows.of(Time.milliseconds(3000)))
+        //keyedStream.window(TumblingEventTimeWindows.of(Time.milliseconds(3000)))
+        keyedStream.window(SlidingEventTimeWindows.of(Time.milliseconds(5000),Time.milliseconds(2000)))
                 /*.min("score")*/
                 /*.max("score")*/
                 /*.minBy("score")*/

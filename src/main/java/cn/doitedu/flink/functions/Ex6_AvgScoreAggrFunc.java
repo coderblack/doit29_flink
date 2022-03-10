@@ -21,7 +21,6 @@ public class Ex6_AvgScoreAggrFunc implements AggregateFunction<Score, Tuple2<Int
     /**
      * 来一条数据，就调用一次
      * 更新累加器
-     *
      * @param value
      * @param accumulator
      * @return
@@ -36,7 +35,6 @@ public class Ex6_AvgScoreAggrFunc implements AggregateFunction<Score, Tuple2<Int
     /**
      * 返回最终结果
      * 窗口关闭触发时调用一次
-     *
      * @param accumulator
      * @return
      */
@@ -49,17 +47,14 @@ public class Ex6_AvgScoreAggrFunc implements AggregateFunction<Score, Tuple2<Int
     /**
      * 用于session窗口的内部窗口合并机制
      * 把两个累加器进行合并
-     *
      * @param a
      * @param b
      * @return
      */
     @Override
     public Tuple2<Integer, Double> merge(Tuple2<Integer, Double> a, Tuple2<Integer, Double> b) {
-
         a.f0 += b.f0;
         a.f1 += b.f1;
-
         return a;
     }
 }

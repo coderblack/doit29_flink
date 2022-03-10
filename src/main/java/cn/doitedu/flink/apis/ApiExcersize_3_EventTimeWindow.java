@@ -58,7 +58,8 @@ public class ApiExcersize_3_EventTimeWindow {
         OutputTag<EventLog> lateTag = new OutputTag<>("late", TypeInformation.of(EventLog.class));  // 侧输出流标签
 
         // 开滑动窗口进行窗口聚合计算
-        SingleOutputStreamOperator<String> stream4 = stream3.windowAll(SlidingEventTimeWindows.of(Time.milliseconds(5000), Time.milliseconds(5000)))
+        SingleOutputStreamOperator<String> stream4 =
+                stream3.windowAll(SlidingEventTimeWindows.of(Time.milliseconds(5000), Time.milliseconds(5000)))
                 .allowedLateness(Time.milliseconds(2000))   // 允许迟到2秒; 默认是0
                 .sideOutputLateData(lateTag)   // 超过迟到最大允许时间的数据，收集到侧输出流
                 .apply(new Ex3_WindowFunc1());
