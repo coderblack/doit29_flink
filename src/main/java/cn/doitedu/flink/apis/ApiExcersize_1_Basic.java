@@ -15,10 +15,7 @@ import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.datastream.KeyedStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
-import org.apache.flink.util.Collector;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.producer.ProducerConfig;
 import pojos.EventLog;
 
 /**
@@ -57,8 +54,10 @@ public class ApiExcersize_1_Basic {
         // 各类聚合练习：
         // 全局聚合，在api中不支持，必须先分组
 
-        // 各种渠道的日志条数
+        // 按channel分组
         KeyedStream<EventLog, String> channelKeyed = stream4.keyBy(eventLog -> eventLog.getChannel());
+
+        // 各种渠道的日志条数
         SingleOutputStreamOperator<Long> logCnt = channelKeyed.process(new Ex1_ProcessFunc());
 
         // 各渠道的事件停留总时长
