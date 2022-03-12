@@ -27,11 +27,11 @@ public class MyStateMapFunc implements MapFunction<String,String>, CheckpointedF
         }
         sb.append(value);
 
-
         // 更新自己的临时状态
-        if(tmpList.size()>1) tmpList.remove(0);
-        tmpList.add(value);
-
+        synchronized ("ok") {
+            if (tmpList.size() > 1) tmpList.remove(0);
+            tmpList.add(value);
+        }
         return sb.toString();
     }
 
