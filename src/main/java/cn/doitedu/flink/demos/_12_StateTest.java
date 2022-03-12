@@ -54,7 +54,6 @@ public class _12_StateTest {
         }).setParallelism(1).print().setParallelism(1);*/
 
         // 每5个元素拼接字符串输出
-        /*
         s1.map(new MapFunction<String, String>() {
             // 初始化状态
             MyState myState = new MyState();
@@ -76,7 +75,6 @@ public class _12_StateTest {
                 return "";
             }
         }).setParallelism(1).print();
-        */
 
 
         /**
