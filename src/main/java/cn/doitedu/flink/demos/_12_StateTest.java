@@ -85,7 +85,7 @@ public class _12_StateTest {
                     return Integer.parseInt(s);
                 })
                 .keyBy(s -> 1)
-                .sum("*")
+                .sum("*")   // 算子内就使用了flink的托管状态
                 .print();
 
         env.execute();

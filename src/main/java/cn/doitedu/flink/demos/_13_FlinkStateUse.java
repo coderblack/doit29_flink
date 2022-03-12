@@ -58,6 +58,7 @@ class SequenceDigits implements SourceFunction<Integer>, CheckpointedFunction {
     @Override
     public void run(SourceContext<Integer> ctx) throws Exception {
         Integer startNumber;
+
         Iterator<Integer> iterator = listState.get().iterator();
         if (iterator.hasNext()) {
             startNumber = iterator.next();

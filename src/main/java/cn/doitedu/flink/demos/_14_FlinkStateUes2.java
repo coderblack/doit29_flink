@@ -1,6 +1,6 @@
 package cn.doitedu.flink.demos;
 
-import cn.doitedu.flink.functions.MyStateMapFunc;
+import cn.doitedu.flink.functions._14_MyStateMapFunc;
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
 import org.apache.flink.api.common.time.Time;
 import org.apache.flink.configuration.Configuration;
@@ -34,7 +34,7 @@ public class _14_FlinkStateUes2 {
         DataStreamSource<String> source = env.socketTextStream("localhost", 9099);
 
         // map数据： 输出“ 本次收到的字符串拼接前2条字符串
-        source.map(new MyStateMapFunc()).setParallelism(1).print();
+        source.map(new _14_MyStateMapFunc()).setParallelism(1).print();
 
         env.execute();
     }

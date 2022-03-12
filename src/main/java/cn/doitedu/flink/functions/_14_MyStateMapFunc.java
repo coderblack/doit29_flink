@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 
-public class MyStateMapFunc implements MapFunction<String,String>, CheckpointedFunction {
+public class _14_MyStateMapFunc implements MapFunction<String,String>, CheckpointedFunction {
     ListState<String> listState ;
     ArrayList<String> tmpList = new ArrayList<String>();
 
