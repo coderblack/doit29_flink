@@ -26,7 +26,7 @@ import java.time.Duration;
 /**
  * 窗口聚合函数大合集
  */
-public class ApiExcersize_6_WindowAggregationFunctions {
+public class ApiExercise_6_WindowAggregationFunctions {
     public static void main(String[] args) throws Exception {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 

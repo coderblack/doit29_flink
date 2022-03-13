@@ -12,7 +12,7 @@ import org.apache.flink.util.Collector;
 /**
  * 定时器使用演示
  */
-public class ApiExcersize_8_Timer {
+public class ApiExercise_8_Timer {
 
     public static void main(String[] args) throws Exception {
 

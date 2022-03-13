@@ -17,7 +17,7 @@ import org.apache.flink.util.Collector;
 import org.apache.flink.util.OutputTag;
 import pojos.Score;
 
-public class ApiExcersize_7_ProcessFunctions {
+public class ApiExercise_7_ProcessFunctions {
     public static void main(String[] args) {
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();

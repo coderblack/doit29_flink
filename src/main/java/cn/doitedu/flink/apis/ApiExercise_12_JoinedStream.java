@@ -11,7 +11,7 @@ import org.apache.flink.streaming.api.windowing.time.Time;
 import pojos.StuInfo;
 import pojos.Student;
 
-public class ApiExcersize_12_JoinedStream {
+public class ApiExercise_12_JoinedStream {
 
     public static void main(String[] args) throws Exception {
 

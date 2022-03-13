@@ -22,7 +22,7 @@ import pojos.EventLog;
  * 从kafka中获取行为日志数据
  * 做各种变化来练习api
  */
-public class ApiExcersize_1_Basic {
+public class ApiExercise_1_Basic {
 
     public static void main(String[] args) throws Exception {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();

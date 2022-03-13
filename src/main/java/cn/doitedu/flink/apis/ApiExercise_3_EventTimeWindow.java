@@ -26,7 +26,7 @@ import java.time.Duration;
 /**
  * 事件时间语义及其窗口聚合
  */
-public class ApiExcersize_3_EventTimeWindow {
+public class ApiExercise_3_EventTimeWindow {
     public static void main(String[] args) throws Exception {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setParallelism(1);
