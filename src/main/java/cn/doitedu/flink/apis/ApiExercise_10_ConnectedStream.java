@@ -18,8 +18,10 @@ public class ApiExercise_10_ConnectedStream {
         // id:name:gender:score
         DataStreamSource<String> source2 = env.socketTextStream("localhost", 9099);
 
+        // 连接两条流
         ConnectedStreams<String, String> connected = source1.connect(source2);
 
+        // 连接后的流做map操作，传入的是CoMapFunction，里面有2个map方法
         SingleOutputStreamOperator<Student> stream = connected.map(new CoMapFunction<String, String, Student>() {
             @Override
             public Student map1(String value) throws Exception {

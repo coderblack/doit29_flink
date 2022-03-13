@@ -51,7 +51,6 @@ public class ApiExercise_09_State {
         // 既然用了状态，并且启用了checkpoint，那么你肯定想让他自动恢复
         env.setRestartStrategy(RestartStrategies.fixedDelayRestart(3, 2000));
 
-
         DataStreamSource<String> source = env.socketTextStream("localhost", 9099);
 
         // 此处的MapFunction中使用了算子状态

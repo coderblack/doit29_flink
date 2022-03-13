@@ -18,6 +18,9 @@ import org.apache.flink.util.Collector;
 
 import java.time.Duration;
 
+/**
+ * kafkaSource 多并行实例场景下的watermark推进测试
+ */
 public class ApiExercise_05_KafkaSourceWaterMarkTest {
     public static void main(String[] args) throws Exception {
 

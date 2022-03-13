@@ -1,13 +1,15 @@
 package cn.doitedu.flink.apis;
 
+import org.apache.flink.api.common.functions.FlatJoinFunction;
 import org.apache.flink.api.common.functions.JoinFunction;
-import org.apache.flink.streaming.api.datastream.DataStream;
-import org.apache.flink.streaming.api.datastream.DataStreamSource;
-import org.apache.flink.streaming.api.datastream.JoinedStreams;
-import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
+import org.apache.flink.api.common.state.BroadcastState;
+import org.apache.flink.api.common.state.MapStateDescriptor;
+import org.apache.flink.streaming.api.datastream.*;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.functions.co.BroadcastProcessFunction;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingProcessingTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
+import org.apache.flink.util.Collector;
 import pojos.StuInfo;
 import pojos.Student;
 
@@ -42,11 +44,25 @@ public class ApiExercise_12_JoinedStream {
                 .where(s -> s.getId()).equalTo(s -> s.getId())
                 .window(TumblingProcessingTimeWindows.of(Time.seconds(20)))
                 .apply(new JoinFunction<Student, StuInfo, String>() {
+                    // 这边传入的两个流的两条数据，是能够满足关联条件的
                     @Override
                     public String join(Student first, StuInfo second) throws Exception {
                         return first.getId() + "," + first.getName() + "," + first.getGender() + "," + first.getScore() + "," + second.getId() + "," + second.getPhone() + "," + second.getCity();
                     }
                 });
+
+        joined.where(s -> s.getId()).equalTo(s -> s.getId())
+                .window(TumblingProcessingTimeWindows.of(Time.seconds(20)))
+                .apply(new FlatJoinFunction<Student, StuInfo, String>() {
+                    @Override
+                    public void join(Student first, StuInfo second, Collector<String> out) throws Exception {
+                        out.collect(first.getId() + "," + first.getName() + "," + first.getGender() + "," + first.getScore() + "," + second.getId() + "," + second.getPhone() + "," + second.getCity());
+                        ;
+                        out.collect(first.getId() + "," + first.getName() + "," + first.getGender() + "," + first.getScore() + "," + second.getId() + "," + second.getPhone() + "," + second.getCity());
+                        ;
+                    }
+                });
+
 
         stream.print();
 

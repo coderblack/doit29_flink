@@ -17,6 +17,9 @@ import org.apache.flink.util.Collector;
 import org.apache.flink.util.OutputTag;
 import pojos.Score;
 
+/**
+ * 各类 process function 演示大合集
+ */
 public class ApiExercise_07_ProcessFunctions {
     public static void main(String[] args) {
 
