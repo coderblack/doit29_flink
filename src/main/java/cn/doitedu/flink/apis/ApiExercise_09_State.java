@@ -30,7 +30,7 @@ import java.util.List;
  * 算子状态
  * keyed状态
  */
-public class ApiExcersize_9_State {
+public class ApiExercise_09_State {
 
     public static void main(String[] args) {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();

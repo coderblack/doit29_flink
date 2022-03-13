@@ -18,7 +18,7 @@ import java.time.Duration;
  * 测试水位线上下游推进机制
  * 下游取上游的所有分区task的水位线的最小值作为当前自己的时间推进点
  */
-public class ApiExercise_4_WaterMarkForward {
+public class ApiExercise_04_WaterMarkForward {
 
     public static void main(String[] args) throws Exception {
 

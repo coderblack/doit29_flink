@@ -33,7 +33,7 @@ import pojos.EventLog;
  *   计数窗口
  *   processingTime语义的时间窗口
  */
-public class ApiExercise_2_CountWindow_ProcessingTimeWindow {
+public class ApiExercise_02_CountWindow_ProcessingTimeWindow {
 
     public static void main(String[] args) throws Exception {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();

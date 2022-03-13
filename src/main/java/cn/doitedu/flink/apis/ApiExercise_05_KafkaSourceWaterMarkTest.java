@@ -18,7 +18,7 @@ import org.apache.flink.util.Collector;
 
 import java.time.Duration;
 
-public class ApiExercise_5_KafkaSourceWaterMarkTest {
+public class ApiExercise_05_KafkaSourceWaterMarkTest {
     public static void main(String[] args) throws Exception {
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
