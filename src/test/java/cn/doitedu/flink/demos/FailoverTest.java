@@ -1,5 +1,6 @@
 package cn.doitedu.flink.demos;
 
+import org.apache.flink.api.common.ExecutionConfig;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
 import org.apache.flink.api.common.state.ListState;
@@ -29,8 +30,8 @@ public class FailoverTest {
     public static void main(String[] args) throws Exception {
         Configuration configuration = new Configuration();
         configuration.setString("execution.savepoint.path", "file:///d:/ckpt/036b20f6d0faef7e41eecc498e06ca75/chk-209");
-
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment(configuration);
+
         env.setParallelism(1);
         env.enableCheckpointing(1000);
         env.setStateBackend(new HashMapStateBackend());

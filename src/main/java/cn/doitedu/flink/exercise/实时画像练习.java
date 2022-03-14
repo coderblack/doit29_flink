@@ -1,17 +1,28 @@
 package cn.doitedu.flink.exercise;
 
+import com.alibaba.fastjson.JSON;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
+import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
+import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.kafka.source.KafkaSource;
 import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer;
+import org.apache.flink.runtime.operators.util.BloomFilter;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
+import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.functions.ProcessFunction;
+import org.apache.flink.util.Collector;
+import pojos.EventLog;
+import pojos.UserEvent;
+
 
 /**
  * 读取用户的行为日志流（前一个项目的数据）
  *     用前一个项目的数据模拟器，生成日志
- *     配置flume采集数据写入kafka
- *     用flink去消费kafka
+ *     配置flume采集数据写入 kafka
+ *     用flink去消费 kafka
  *
  *     然后做计算
  *
@@ -67,8 +78,27 @@ public class 实时画像练习 {
         DataStreamSource<String> source = env.fromSource(kafkaSource, WatermarkStrategy.noWatermarks(), "kfk");
 
         // 把json数据转成pojo数据流
-        // TODO
+        // 
+        SingleOutputStreamOperator<UserEvent> events = source.map(new MapFunction<String, UserEvent>() {
+            @Override
+            public UserEvent map(String value) throws Exception {
+                return JSON.parseObject(value, UserEvent.class);
+            }
+        });
 
+
+        // guid,首次登陆时间，最近一次登陆时间, 历史累计的搜索行为次数，最近1天的（自然天）访问次数,最近 1小时 的访问总时长（每5分钟更新一次），活跃等级（1,2,3）
+        events.process(new ProcessFunction<UserEvent, Tuple2<Integer,Long>>() {
+            @Override
+            public void open(Configuration parameters) throws Exception {
+
+            }
+
+            @Override
+            public void processElement(UserEvent value, Context ctx, Collector<Tuple2<Integer, Long>> out) throws Exception {
+                long timestamp = value.getTimestamp();
+            }
+        });
 
         source.print();
 
