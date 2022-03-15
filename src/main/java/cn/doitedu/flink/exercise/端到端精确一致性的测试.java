@@ -11,6 +11,7 @@ import org.apache.flink.connector.jdbc.*;
 import org.apache.flink.connector.kafka.source.KafkaSource;
 import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer;
 import org.apache.flink.streaming.api.CheckpointingMode;
+import org.apache.flink.streaming.api.datastream.DataStreamSink;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.sink.SinkFunction;
@@ -53,7 +54,7 @@ public class 端到端精确一致性的测试 {
         KafkaSource<String> source = KafkaSource.<String>builder()
                 .setBootstrapServers("doit01:9092")
                 .setTopics("b05")
-                .setGroupId("x05")
+                .setGroupId("x06")
                 .setValueOnlyDeserializer(new SimpleStringSchema())
                 .setProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG,"false")
                 // kafkaSource的做状态checkpoint时，默认会向__consumer_offsets提交一下状态中记录的偏移量
@@ -84,7 +85,7 @@ public class 端到端精确一致性的测试 {
                         .build()
         );*/
 
-        /*SinkFunction<String> exactlyOnceSink = JdbcSink.exactlyOnceSink(
+        SinkFunction<String> exactlyOnceSink = JdbcSink.exactlyOnceSink(
                 "insert into t_once values (?)",
                 new JdbcStatementBuilder<String>() {
                     @Override
@@ -97,7 +98,7 @@ public class 端到端精确一致性的测试 {
                         .withBatchSize(1)
                         .build(),
                 JdbcExactlyOnceOptions.builder()
-                        .withTransactionPerConnection(true) // mysql不支持同一个连接上存在并行的多个事务，必须把该参数设置为true
+                        .withTransactionPerConnection(true) // mysql不支持同一个连接上存在并行的多个未完成的事务，必须把该参数设置为true
                         .build(),
                 new SerializableSupplier<XADataSource>() {
                     @Override
@@ -111,30 +112,31 @@ public class 端到端精确一致性的测试 {
                         return xaDataSource;
                     }
                 }
-        );*/
+        );
 
 
 
-        DataStreamSource<String> s1 = (DataStreamSource<String>) env.fromSource(source, WatermarkStrategy.noWatermarks(), "kfk");
+        DataStreamSource<String> s1 = env.fromSource(source, WatermarkStrategy.noWatermarks(), "kfk");
 
-        s1.map(new MapFunction<String, String>() {
+        /*s1.map(new MapFunction<String, String>() {
             @Override
             public String map(String value) throws Exception {
                 if(value.equals("x") && RandomUtils.nextInt(1,5)%3==0) throw new Exception("抛了个异常......");
 
                 return value;
             }
-        }).print();
+        }).print();*/
 
 
-        /*s1.map(new MapFunction<String, String>() {
+        s1.map(new MapFunction<String, String>() {
             @Override
             public String map(String s) throws Exception {
-                if(s.equals("error") && 3/RandomUtils.nextInt(0,3)==1);
+                if (s.equals("x") && 3 / RandomUtils.nextInt(0, 3) == 1) ;
                 return s;
             }
-        }).addSink(exactlyOnceSink);*/
+        });
 
+        s1.addSink(exactlyOnceSink);
 
         env.execute();
     }
