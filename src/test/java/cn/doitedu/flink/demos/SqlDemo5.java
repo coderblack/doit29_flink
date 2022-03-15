@@ -1,4 +1,4 @@
-package cn.doitedu.flink.sqls;
+package cn.doitedu.flink.demos;
 
 import org.apache.flink.streaming.api.CheckpointingMode;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;

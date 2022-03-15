@@ -1,4 +1,4 @@
-package cn.doitedu.flink.sqls;
+package cn.doitedu.flink.demos;
 
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.typeinfo.TypeHint;
