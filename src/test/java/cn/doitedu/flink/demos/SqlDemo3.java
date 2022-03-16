@@ -61,6 +61,8 @@ public class SqlDemo3 {
         /*tableEnv.createTemporaryView("t1",table);
         tableEnv.executeSql("select * from t1").print();*/
 
+        tableEnv.executeSql("建表语句  with connector ");
+
         // 创建视图  --> 从dataStream,从table
         //tableEnv.createTemporaryView();
         tableEnv.executeSql("create table x1");
@@ -71,9 +73,12 @@ public class SqlDemo3 {
         Table t4 = tableEnv.fromChangelogStream(rowDataStream);*/
 
 
-        TableDescriptor descriptor = TableDescriptor.forConnector("")
+        TableDescriptor descriptor = TableDescriptor
+                .forConnector("kafka")
+                .format("csv")
                 .build();
         Table t5 = tableEnv.from(descriptor);
+
 
         env.execute();
 

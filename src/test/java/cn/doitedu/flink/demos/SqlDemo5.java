@@ -35,7 +35,7 @@ public class SqlDemo5 {
                 "  'format' = 'csv' ,\n" +
                 "  'csv.ignore-parse-errors' = 'true'" +
                 ")";
-
+        tableEnv.executeSql(sourceTable);
 
         String mySqlTable = "CREATE TABLE user_table (\n" +
                 "  id INT,\n" +
@@ -48,9 +48,10 @@ public class SqlDemo5 {
                 "   'username' = 'root' , \n" +
                 "   'password' = '123456' \n" +
                 ") ";
-
-        tableEnv.executeSql(sourceTable);
         tableEnv.executeSql(mySqlTable);
+
+
+
         /*tableEnv.executeSql("create table user as select cast(id as bigint) as id,name from user_table");*/
 
 
