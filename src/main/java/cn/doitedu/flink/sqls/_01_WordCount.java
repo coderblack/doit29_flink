@@ -94,7 +94,6 @@ public class _01_WordCount {
          * | cnt2 | BIGINT | true |     | AS cast(f1 as bigint) |           |
          * +------+--------+------+-----+-----------------------+-----------+
          */
-
         tEnv.executeSql("select * from t4").print();
 
 
