@@ -14,7 +14,7 @@ import org.apache.flink.util.Collector;
 
 import static org.apache.flink.table.api.Expressions.$;
 
-public class WordCount {
+public class _01_WordCount {
 
     public static void main(String[] args) throws Exception {
 
