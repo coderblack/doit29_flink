@@ -23,7 +23,7 @@ public class _03_TableApiDemo {
             @Override
             public UserAction map(String value) throws Exception {
                 String[] split = value.split(",");
-                return new UserAction(Long.parseLong(split[0]), Long.parseLong(split[1]), split[2], Long.parseLong(split[3]));
+                return new UserAction(Long.parseLong(split[0]), Long.parseLong(split[1]), split[2], Long.parseLong(split[3]),split[4]);
             }
         });
 

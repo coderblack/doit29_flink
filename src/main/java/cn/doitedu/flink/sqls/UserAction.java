@@ -15,4 +15,5 @@ public class UserAction implements Serializable {
     private long actionTime;
     private String eventId;
     private long actionStaylong;
+    private String channel;
 }
