@@ -1,7 +1,6 @@
 package cn.doitedu.flink.sqls;
 
 import cn.doitedu.flink.utils.SqlHolder;
-import groovy.sql.Sql;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 
