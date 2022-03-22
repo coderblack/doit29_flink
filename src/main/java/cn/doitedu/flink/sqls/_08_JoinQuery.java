@@ -64,9 +64,11 @@ public class _08_JoinQuery {
 
 
         // interval join
-        //tenv.executeSql("select * from t1,t2 where t1.f0=t2.f0 and t1.rt between t2.rt - interval '5' second and t2.rt ")/*.print()*/;
+        // 小细节：两表join时，如果都有 event-time属性，则最后的结果不能同时 select 两表的两个 event-time字段
+        tenv.executeSql("select t1.f0, t1.f1, t1.f2, t1.rt, t2.f2 from t1,t2 where t1.f0=t2.f0 and t1.rt between t2.rt - interval '5' second and t2.rt ")/*.print()*/;
 
-        // 两表join时，如果都有 event-time属性，则最后的结果不能同时 select 两表的两个 event-time字段
+        // temporal join
+        // 小细节：两表join时，如果都有 event-time属性，则最后的结果不能同时 select 两表的两个 event-time字段
         tenv.executeSql("select t1.f0,t1.f2,t1.rt,t2.f0 as t2_f0,t2.f2 as t2_f2 from t1 " +
                 "LEFT JOIN t2 FOR SYSTEM_TIME AS OF t1.rt " +
                 "ON t1.f0 = t2.f0").print();
