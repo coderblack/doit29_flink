@@ -10,7 +10,7 @@ import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.Schema;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 
-public class _08_JoinQuery {
+public class _08_NoneWindowJoinQuery {
     public static void main(String[] args) {
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
@@ -57,17 +57,24 @@ public class _08_JoinQuery {
                 .primaryKey("f0")  // 将f0声明成主键，用来支撑 temporal join
                 .build());
 
+        // 常规 inner join
         tenv.executeSql("select * from t1 join t2 on t1.f0 = t2.f0")/*.print()*/;
+
+        // 常规  left join
         tenv.executeSql("select * from t1 left join t2 on t1.f0 = t2.f0")/*.print()*/;
+
+        // 常规 right join
         tenv.executeSql("select * from t1 right join t2 on t1.f0 = t2.f0")/*.print()*/;
+
+        // 常规 full join
         tenv.executeSql("select * from t1 full outer join t2 on t1.f0 = t2.f0")/*.print()*/;
 
 
-        // interval join
+        // 时间范围join:  interval join
         // 小细节：两表join时，如果都有 event-time属性，则最后的结果不能同时 select 两表的两个 event-time字段
         tenv.executeSql("select t1.f0, t1.f1, t1.f2, t1.rt, t2.f2 from t1,t2 where t1.f0=t2.f0 and t1.rt between t2.rt - interval '5' second and t2.rt ")/*.print()*/;
 
-        // temporal join
+        // 世代join:  temporal join
         // 小细节：两表join时，如果都有 event-time属性，则最后的结果不能同时 select 两表的两个 event-time字段
         tenv.executeSql("select t1.f0,t1.f2,t1.rt,t2.f0 as t2_f0,t2.f2 as t2_f2 from t1 " +
                 "LEFT JOIN t2 FOR SYSTEM_TIME AS OF t1.rt " +

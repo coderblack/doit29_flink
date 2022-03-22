@@ -198,3 +198,71 @@ from (
      on o1.id = o2.id and o1.window_start = o2.window_start and o1.window_end = o2.window_end
 
 
+~
+-- sql_17 jdbc连接器建表（测试lookup join 用）
+CREATE TEMPORARY TABLE product_category (
+  id STRING,
+  name STRING
+) WITH (
+  'connector' = 'jdbc',
+  'url' = 'jdbc:mysql://localhost:3306/abc',
+  'table-name' = 'product_category'  ,
+  'username' = 'root' ,
+  'password' = '123456'
+)
+
+
+~
+-- sql_18  lookup join测试
+SELECT t1.id, t1.name, c.name as c_name
+FROM t1
+JOIN product_category FOR SYSTEM_TIME AS OF t1.ptime AS c
+ON t1.id = c.id
+
+
+~
+-- sql_19 jdbc连接器建表（测试 insert 用）
+CREATE TEMPORARY TABLE flink_order (
+  id STRING,
+  order_time BIGINT,
+  product_name STRING,
+  PRIMARY KEY (id) NOT ENFORCED
+) WITH (
+  'connector' = 'jdbc',
+  'url' = 'jdbc:mysql://localhost:3306/abc',
+  'table-name' = 'flink_order'  ,
+  'username' = 'root' ,
+  'password' = '123456'
+)
+
+
+
+~
+-- sql_20 kafka连接器建表（测试 insert 用）
+CREATE TABLE kafka_order (
+        `id` STRING,
+        `order_time` BIGINT,
+        `product_name` STRING
+) WITH (
+      'connector' = 'kafka',    -- kafka 连接器，不支持upsert流
+      'topic' = 'flink-insert',
+      'properties.bootstrap.servers' = 'doit01:9092',
+      'properties.group.id' = 'testGroup',
+      'scan.startup.mode' = 'earliest-offset',
+      'format' = 'csv'
+      )
+
+~
+-- sql_21 upsert_kafka 连接器建表（测试 写入 changeLog流）
+CREATE TABLE kafka_upsert_order (
+                                    `id` STRING,
+                                    `order_time` BIGINT,
+                                    `product_name` STRING,
+                                     PRIMARY KEY (id) NOT ENFORCED
+) WITH (
+      'connector' = 'upsert-kafka',  -- upsert-kafka 连接器，支持changeLog流
+      'topic' = 'flink-insert',
+      'properties.bootstrap.servers' = 'doit01:9092',
+      'key.format' = 'csv',
+      'value.format' = 'csv'
+)
