@@ -202,7 +202,8 @@ from (
 -- sql_17 jdbc连接器建表（测试lookup join 用）
 CREATE TEMPORARY TABLE product_category (
   id STRING,
-  name STRING
+  name STRING,
+  description STRING
 ) WITH (
   'connector' = 'jdbc',
   'url' = 'jdbc:mysql://localhost:3306/abc',
@@ -214,10 +215,10 @@ CREATE TEMPORARY TABLE product_category (
 
 ~
 -- sql_18  lookup join测试
-SELECT t1.id, t1.name, c.name as c_name
+SELECT t1.uid,t1.actTime,t1.pid, c.name,c.description
 FROM t1
 JOIN product_category FOR SYSTEM_TIME AS OF t1.ptime AS c
-ON t1.id = c.id
+ON t1.pid = c.id
 
 
 ~

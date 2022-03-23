@@ -34,21 +34,26 @@ public class _10_LookupJoin {
 
         // 建事实流表 : t1
         tenv.createTemporaryView("t1",stream1, Schema.newBuilder()
-                .columnByExpression("id",$("f0"))
+                .columnByExpression("uid",$("f0"))
                 .columnByExpression("actTime",$("f1"))
-                .columnByExpression("name",$("f2"))
+                .columnByExpression("pid",$("f2"))
                 .columnByExpression("ptime","proctime()")  // 表达式逻辑字段，必须引用 物理字段
                 .build());
 
 
 
-        // 建外部lookup用的连接器维表  : product_category
+        // 把mysql中的维表 product_category ，注册成flinksql中的表 product_category
         tenv.executeSql(SqlHolder.getSql(17));
 
 
-
-
         // 两表 lookup join
+        /**
+         * SELECT
+         *    t1.uid,t1.actTime,t1.pid, c.name,c.description
+         * FROM t1
+         * JOIN product_category FOR SYSTEM_TIME AS OF t1.ptime AS c
+         * ON t1.pid = c.id
+         */
         tenv.executeSql(SqlHolder.getSql(18)).print();
 
 

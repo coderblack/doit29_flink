@@ -14,7 +14,7 @@ public class _08_NoneWindowJoinQuery {
     public static void main(String[] args) {
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        env.setParallelism(1);
+        //env.setParallelism(1);
         StreamTableEnvironment tenv = StreamTableEnvironment.create(env);
 
         // a,1647915750000,1
@@ -72,13 +72,18 @@ public class _08_NoneWindowJoinQuery {
 
         // 时间范围join:  interval join
         // 小细节：两表join时，如果都有 event-time属性，则最后的结果不能同时 select 两表的两个 event-time字段
-        tenv.executeSql("select t1.f0, t1.f1, t1.f2, t1.rt, t2.f2 from t1,t2 where t1.f0=t2.f0 and t1.rt between t2.rt - interval '5' second and t2.rt ")/*.print()*/;
+
+        // 左表数据时间t  ,去关联 右表中 t->t+5的数据
+        //tenv.executeSql("select t1.f0, t1.f1, t1.f2, t1.rt, t2.f2 from t1,t2 where t1.f0=t2.f0 and t1.rt between t2.rt - interval '5' second and t2.rt ").print();
+
+        // 左表数据时间t，去关联右表中 t-5 -> t 的数据
+        tenv.executeSql("select t1.f0, t1.f1, t1.f2, t1.rt, t2.f2 from t1,t2 where t1.f0=t2.f0 and t1.rt between t2.rt and t2.rt + interval '5' second  ").print();
 
         // 世代join:  temporal join
         // 小细节：两表join时，如果都有 event-time属性，则最后的结果不能同时 select 两表的两个 event-time字段
-        tenv.executeSql("select t1.f0,t1.f2,t1.rt,t2.f0 as t2_f0,t2.f2 as t2_f2 from t1 " +
+       /* tenv.executeSql("select t1.f0,t1.f2,t1.rt,t2.f0 as t2_f0,t2.f2 as t2_f2 from t1 " +
                 "LEFT JOIN t2 FOR SYSTEM_TIME AS OF t1.rt " +
-                "ON t1.f0 = t2.f0").print();
+                "ON t1.f0 = t2.f0").print()*/;
 
     }
 }
