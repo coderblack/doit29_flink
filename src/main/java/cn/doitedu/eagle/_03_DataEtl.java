@@ -8,6 +8,7 @@ import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsIni
 import org.apache.flink.streaming.api.CheckpointingMode;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 import org.apache.kafka.clients.consumer.OffsetResetStrategy;
 
 import java.time.Duration;
@@ -21,16 +22,40 @@ import java.time.Duration;
 public class _03_DataEtl {
     public static void main(String[] args) {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        env.enableCheckpointing(1000, CheckpointingMode.EXACTLY_ONCE);
-        env.getCheckpointConfig().setCheckpointStorage("hdfs://doit01:8020/ckpt");
-        KafkaSource<String> kfkSource = KafkaSource.<String>builder()
-                .setBootstrapServers("doit01:9092,doit02:9092")
-                .setStartingOffsets(OffsetsInitializer.committedOffsets(OffsetResetStrategy.LATEST))
-                .setValueOnlyDeserializer(new SimpleStringSchema())
-                .setTopics("applog")
-                .build();
+        env.setParallelism(1);
+        StreamTableEnvironment tenv = StreamTableEnvironment.create(env);
 
+        tenv.executeSql("CREATE TABLE mysql_binlog (\n" +
+                " id INT NOT NULL,\n" +
+                " name STRING,\n" +
+                " age INT ,\n" +
+                " primary key(id) not enforced" +
+                ") WITH (\n" +
+                " 'connector' = 'mysql-cdc',\n" +
+                " 'hostname' = 'localhost',\n" +
+                " 'port' = '3306',\n" +
+                " 'username' = 'root',\n" +
+                " 'password' = '123456',\n" +
+                " 'database-name' = 'abc',\n" +
+                " 'server-time-zone' = 'Asia/Shanghai' ,   \n" +
+                " 'table-name' = 'flink_test'\n" +
+                ")");
 
+        tenv.executeSql("CREATE TEMPORARY TABLE flink_test2 (\n" +
+                " id INT NOT NULL,\n" +
+                " name STRING,\n" +
+                " age INT ,\n" +
+                " primary key(id) not enforced \n" +
+                ") WITH (   \n" +
+                " 'connector' = 'jdbc',    \n" +
+                " 'url' = 'jdbc:mysql://localhost:3306/abc?serverTimezone=Asia/Shanghai', \n" +
+                " 'username' = 'root',   \n" +
+                " 'password' = '123456',    \n" +
+                " 'driver' = 'com.mysql.cj.jdbc.Driver' ,\n" +
+                " 'table-name' = 'flink_test2'    \n" +
+                ")");
+
+        tenv.executeSql("insert into flink_test2 select id,name,age from mysql_binlog").print();
 
     }
 }
