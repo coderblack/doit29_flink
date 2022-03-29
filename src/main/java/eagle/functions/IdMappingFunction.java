@@ -10,10 +10,7 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
 import org.apache.flink.util.Collector;
 import org.apache.hadoop.hbase.*;
-import org.apache.hadoop.hbase.client.ConnectionFactory;
-import org.apache.hadoop.hbase.client.Get;
-import org.apache.hadoop.hbase.client.Result;
-import org.apache.hadoop.hbase.client.Table;
+import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.util.Bytes;
 
 import java.sql.Connection;
@@ -30,22 +27,52 @@ import java.sql.ResultSet;
  * `update_time` bigint(20) DEFAULT NULL,
  * PRIMARY KEY (`id`)
  * ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
- *
- *
+ * <p>
+ * <p>
  * 设备账号绑定权重关系表，hbase创建
  * hbase>  create 'device_account_bind','f'
- *
+ * <p>
  * -- 表结构说明
  * rowKey:deviceId
  * family: f
  * qualifier : 账号
  * value:  评分
  * ----------------------------------
- *   rk      |      f           |
+ * rk      |      f           |
  * ---------------------------------
  * dev01     | ac01:100,ac02:80 |
  * ----------------------------------
+
+ * 设备临时GUID表，hbase创建
+ * hbase>  create 'device_tmp_guid','f'
+ * -- 表结构说明
+ * rowKey:deviceId
+ * family: f
+ * qualifier : guid
+ * value:  100000001
+ * qualifier: ft  -- 首次到访时间
+ * value:  137498587283123
+ * ----------------------------------------------------
+ * rk      |      f                        |
+ * ------------------------------------------------------
+ * dev01     | guid:1001,ft:137498587283123 |
+ * -------------------------------------------------------
+
+
+ * 设备临时GUID计数器表，hbase创建
+ * hbase>  create 'device_tmp_maxid','f'
  *
+ * -- 表结构说明
+ * rowKey: "r"
+ * family: "f"
+ * qualifier : "maxid"
+ * value:  100000001
+ * <p>
+ * ----------------------------------------------------
+ * rk      |      f                        |
+ * ------------------------------------------------------
+ * r     | maxId:1000001                 |
+ * -------------------------------------------------------
  */
 
 public class IdMappingFunction extends KeyedProcessFunction<String, EventBean, EventBean> {
@@ -56,6 +83,8 @@ public class IdMappingFunction extends KeyedProcessFunction<String, EventBean, E
     PreparedStatement preparedStatement;
     org.apache.hadoop.hbase.client.Connection hbaseConn;
     Table deviceBindTable;
+    Table deviceTmpGuidTable;
+    Table deviceTmpMaxIdTable;
 
 
     @Override
@@ -77,10 +106,17 @@ public class IdMappingFunction extends KeyedProcessFunction<String, EventBean, E
 
         // 构造一个hbase的连接
         org.apache.hadoop.conf.Configuration conf = HBaseConfiguration.create();
-        conf.set("hbase.zookeeper.quorum","doit01:2181,doit02:2181,doit03:2181");
+        conf.set("hbase.zookeeper.quorum", "doit01:2181,doit02:2181,doit03:2181");
         hbaseConn = ConnectionFactory.createConnection(conf);
+
+        // 获取  设备账号绑定表
         deviceBindTable = hbaseConn.getTable(TableName.valueOf("device_account_bind"));
 
+        // 获取  设备临时guid表
+        deviceTmpGuidTable = hbaseConn.getTable(TableName.valueOf("device_tmp_guid"));
+
+        // 获取  设备临时guid最大值计数器表
+        deviceTmpMaxIdTable = hbaseConn.getTable(TableName.valueOf("device_tmp_maxid"));
 
     }
 
@@ -119,8 +155,20 @@ public class IdMappingFunction extends KeyedProcessFunction<String, EventBean, E
             eventBean.setRegisterTime(registerTime);
 
 
-            // 为该设备号的  设备账号绑定关系  增加权重
-            deviceBindTable.incrementColumnValue(Bytes.toBytes(eventBean.getDeviceid()),Bytes.toBytes("f"),Bytes.toBytes(userAccount),1);
+            // 为该设备号的  设备账号绑定关系  增加 本次账号的 权重
+            deviceBindTable.incrementColumnValue(Bytes.toBytes(eventBean.getDeviceid()), Bytes.toBytes("f"), Bytes.toBytes(userAccount), 1);
+            // 并对其他绑定账号的权重进行衰减
+            Get get = new Get(Bytes.toBytes(eventBean.getDeviceid()));
+            Result result = deviceBindTable.get(get);
+            CellScanner cellScanner = result.cellScanner();
+            while (cellScanner.advance()) {
+                Cell cell = cellScanner.current();
+                // 取到绑定账号
+                String bindAccount = Bytes.toString(CellUtil.cloneQualifier(cell));
+                if (!bindAccount.equals(userAccount)) {
+                    deviceBindTable.incrementColumnValue(Bytes.toBytes(eventBean.getDeviceid()), Bytes.toBytes("f"), Bytes.toBytes(bindAccount), -1);
+                }
+            }
 
 
             // 输出
@@ -133,7 +181,7 @@ public class IdMappingFunction extends KeyedProcessFunction<String, EventBean, E
             DeviceIdMapBean deviceIdMapBean = deviceIdMapState.get(eventBean.getDeviceid());
 
             // 如果状态中有该设备号的信息
-            if(deviceIdMapBean != null) {
+            if (deviceIdMapBean != null) {
                 // 填充字段
                 eventBean.setGuid(deviceIdMapBean.getGuid());
                 eventBean.setFirstAccessTime(deviceIdMapBean.getFirstAccessTime());
@@ -143,9 +191,9 @@ public class IdMappingFunction extends KeyedProcessFunction<String, EventBean, E
             }
             // 如果状态中没有该设备号的信息
             else {
-
+                byte[] deviceIdBytes = Bytes.toBytes(eventBean.getDeviceid());
                 // 根据设备号，去hbase的 “设备-账号 绑定表” 查询账号
-                Get get = new Get(Bytes.toBytes(eventBean.getDeviceid()));
+                Get get = new Get(deviceIdBytes);
                 Result result = deviceBindTable.get(get);
 
                 // 如果在hbase中存在设备绑定的账号信息
@@ -202,17 +250,70 @@ public class IdMappingFunction extends KeyedProcessFunction<String, EventBean, E
                     collector.collect(eventBean);
                 }
                 // 如果 hbase 中没有设备绑定的账号信息，则去  deviceid临时guid表 查询
-                else{
+                else {
+                    Get get1 = new Get(deviceIdBytes);
+                    Result result1 = deviceTmpGuidTable.get(get1);
+
+                    // 如果存在临时id信息
+                    if (!result1.isEmpty()) {
+                        byte[] tmpGuidBytes = result1.getValue(Bytes.toBytes("f"), Bytes.toBytes("guid"));
+                        byte[] firstAccessTimeBytes = result1.getValue(Bytes.toBytes("f"), Bytes.toBytes("ft"));
+
+                        // 填充字段
+                        long guid = Bytes.toLong(tmpGuidBytes);
+                        long firstAccessTime = Bytes.toLong(firstAccessTimeBytes);
+                        eventBean.setGuid(guid);
+                        eventBean.setFirstAccessTime(firstAccessTime);
+
+
+                        // 将查询到的结果，存到state中
+                        deviceIdMapState.put(eventBean.getDeviceid(), new DeviceIdMapBean(guid, firstAccessTime));
+
+                        // 输出
+                        collector.collect(eventBean);
+                    }
+                    // 如果不存在临时id信息，则请求 hbase的技术进行增1，得到guid，并将结果插入 deviceid临时guid表
+                    else {
+                        long newMaxId = deviceTmpMaxIdTable.incrementColumnValue("r".getBytes(), "f".getBytes(), "maxId".getBytes(), 1);
+                        long firstAccessTime = eventBean.getTimestamp();
+
+                        // 填充字段
+                        eventBean.setGuid(newMaxId);
+                        eventBean.setFirstAccessTime(firstAccessTime);
+
+                        // 插入hbase的设备临时guid表
+                        Put put = new Put(Bytes.toBytes(eventBean.getDeviceid()));
+                        put.addColumn("f".getBytes(), "guid".getBytes(), Bytes.toBytes(newMaxId));
+                        put.addColumn("f".getBytes(), "ft".getBytes(), Bytes.toBytes(firstAccessTime));
+                        deviceTmpGuidTable.put(put);
+
+                        // 将该设备对应的临时guid，放到flink的本地state中
+                        deviceIdMapState.put(eventBean.getDeviceid(), new DeviceIdMapBean(newMaxId, firstAccessTime));
+
+                        // 输出
+                        collector.collect(eventBean);
+                    }
 
 
                 }
             }
 
-
-
-
-            // 如果还查不到，则请求 hbase的技术进行增1，得到guid，并将结果插入 deviceid临时guid表
         }
+
+
+
+    }
+
+
+    @Override
+    public void close() throws Exception {
+        preparedStatement.close();
+        conn.close();
+
+        deviceBindTable.close();
+        deviceTmpGuidTable.close();
+        deviceTmpMaxIdTable.close();
+        hbaseConn.close();
 
     }
 }
