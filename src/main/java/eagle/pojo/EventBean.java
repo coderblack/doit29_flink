@@ -34,6 +34,11 @@ public class EventBean {
     private String resolution;
     private String sessionid;
     private long timestamp;
+    private long guid;
+    // 如果是注册用户，则这里表示注册的时间
+    private long registerTime;
+    // 如果是非注册用户，则这里表示首次到访时间
+    private long firstAccessTime;
 
 
 }
