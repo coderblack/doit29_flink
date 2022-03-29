@@ -3,6 +3,7 @@ package eagle.etl;
 import com.alibaba.fastjson.JSON;
 import eagle.functions.IdMappingFunction;
 import eagle.pojo.EventBean;
+import org.apache.commons.lang.time.DateUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.functions.MapFunction;
@@ -21,6 +22,7 @@ import org.apache.flink.util.Collector;
 import org.apache.kafka.clients.consumer.OffsetResetStrategy;
 
 import java.awt.*;
+import java.util.Date;
 
 public class IdMapping {
     public static void main(String[] args) throws Exception {
@@ -51,13 +53,33 @@ public class IdMapping {
         });
 
 
-        SingleOutputStreamOperator<EventBean> guidedStream = stream2.filter(bean -> StringUtils.isNotBlank(bean.getDeviceid())
+        SingleOutputStreamOperator<EventBean> resultStream = stream2.filter(bean -> StringUtils.isNotBlank(bean.getDeviceid())
                         && StringUtils.isNotBlank(bean.getEventid())
                         && bean.getTimestamp() > 1000000000000L
                         && bean.getProperties() != null
                 )
                 .keyBy(bean -> bean.getDeviceid())
-                .process(new IdMappingFunction());
+                .process(new IdMappingFunction())
+                // 新老属性标记
+                .map(bean -> {
+                    long firstAccessTime = bean.getFirstAccessTime();
+                    long registerTime = bean.getRegisterTime();
+                    // 判断上面的两个时间任意一个不是今天，则是老用户
+                    long  judeTime = firstAccessTime!=0? firstAccessTime : registerTime;
+
+
+                    Date judeDate = new Date(judeTime);
+                    Date today = new Date();
+
+                    boolean sameDay = DateUtils.isSameDay(today, judeDate);
+
+                    bean.setIsNew(sameDay?1:0);
+
+                    return bean;
+                }).returns(EventBean.class);
+
+
+        resultStream.print();
 
 
         env.execute();

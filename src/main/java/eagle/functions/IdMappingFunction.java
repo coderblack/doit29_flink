@@ -19,7 +19,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
 /**
- * 测试用mysql用户注册信息表：
+ * -- 测试用 mysql 用户注册信息表：
  * CREATE TABLE `ums_member` (
  * `id` int(11) NOT NULL AUTO_INCREMENT,
  * `account` varchar(255) DEFAULT NULL,
@@ -27,23 +27,24 @@ import java.sql.ResultSet;
  * `update_time` bigint(20) DEFAULT NULL,
  * PRIMARY KEY (`id`)
  * ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
- * <p>
- * <p>
- * 设备账号绑定权重关系表，hbase创建
+
+
+
+ * -- 设备账号绑定权重关系表，hbase创建
  * hbase>  create 'device_account_bind','f'
- * <p>
+ *
  * -- 表结构说明
  * rowKey:deviceId
  * family: "f"
  * qualifier : 账号
  * value:  评分
  * ----------------------------------
- * rk      |      f             |
+ * rk        |      f              |
  * ---------------------------------
- * dev01     | ac01:100,ac02:80 |
+ * dev01     | ac01:100, ac02:80 |
  * ----------------------------------
 
- * 设备临时GUID表，hbase创建
+ * -- 设备临时GUID表，hbase创建
  * hbase>  create 'device_tmp_guid','f'
  * -- 表结构说明
  * rowKey:deviceId
@@ -59,7 +60,7 @@ import java.sql.ResultSet;
  * -------------------------------------------------------
 
 
- * 设备临时GUID计数器表，hbase创建
+ * -- 设备临时GUID计数器表，hbase创建
  * hbase>  create 'device_tmp_maxid','f'
  *
  * -- 表结构说明
@@ -67,12 +68,16 @@ import java.sql.ResultSet;
  * family: "f"
  * qualifier : "maxid"
  * value:  100000001
- * <p>
+ *
  * ----------------------------------------------------
  * rk      |      f                        |
  * ------------------------------------------------------
- * r     | maxId:1000001                 |
+ * r      | maxId:1000001                 |
  * -------------------------------------------------------
+ *
+ * -- 放入1亿这个初始值的客户端命令
+ * incr 'device_tmp_maxid','r','f:maxid',100000000
+ *
  */
 
 public class IdMappingFunction extends KeyedProcessFunction<String, EventBean, EventBean> {
@@ -100,7 +105,7 @@ public class IdMappingFunction extends KeyedProcessFunction<String, EventBean, E
 
 
         // 构造一个jdbc的连接（并不需要用连接池）
-        conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/eagle?useUnicode=true&characterEncoding=UTF-8", "root", "123456");
+        conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/eagle?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai", "root", "123456");
         preparedStatement = conn.prepareStatement("select * from ums_member where account = ?");
 
 
@@ -200,7 +205,7 @@ public class IdMappingFunction extends KeyedProcessFunction<String, EventBean, E
                 if (!result.isEmpty()) {
                     CellScanner cellScanner = result.cellScanner();
 
-                    String tmpAccount;
+                    String tmpAccount = "";
                     long tmpWeight = 0;
                     // 迭代这个设备所绑定的所有账号及其权重，取权重最大的
                     while (cellScanner.advance()) {
@@ -219,7 +224,7 @@ public class IdMappingFunction extends KeyedProcessFunction<String, EventBean, E
                     }
 
                     // 拿着个权重最大的账号，在状态中查询，如果状态中没有，则去mysql中查
-                    AccountIdMapBean accountIdMapBean = accountIdMapState.get(userAccount);
+                    AccountIdMapBean accountIdMapBean = accountIdMapState.get(tmpAccount);
                     // 如果在状态中查询到了用户的guid、注册时间等信息，则填充结果字段并输出返回
                     long guid;
                     long registerTime;
@@ -228,22 +233,24 @@ public class IdMappingFunction extends KeyedProcessFunction<String, EventBean, E
                         guid = accountIdMapBean.getGuid();
                         registerTime = accountIdMapBean.getRegisterTime();
                     }
+
                     // 如果在状态中没有查询到，则去mysql的用户注册表中查询信息
                     else {
-                        preparedStatement.setString(1, userAccount);
+                        preparedStatement.setString(1, tmpAccount);
                         ResultSet resultSet = preparedStatement.executeQuery();
                         resultSet.next();
                         guid = resultSet.getLong("id");
                         registerTime = resultSet.getLong("create_time");
 
                         // 将查询到的guid和注册时间，填入 state
-                        accountIdMapState.put(userAccount, new AccountIdMapBean(guid, registerTime));
+                        accountIdMapState.put(tmpAccount, new AccountIdMapBean(guid, registerTime));
                     }
 
 
                     // 填充查询到的guid和注册时间
                     eventBean.setGuid(guid);
                     eventBean.setRegisterTime(registerTime);
+                    eventBean.setAccount(tmpAccount);  // 顺便为日志数据补上账号
 
 
                     // 输出结果
@@ -274,7 +281,7 @@ public class IdMappingFunction extends KeyedProcessFunction<String, EventBean, E
                     }
                     // 如果不存在临时id信息，则请求 hbase的技术进行增1，得到guid，并将结果插入 deviceid临时guid表
                     else {
-                        long newMaxId = deviceTmpMaxIdTable.incrementColumnValue("r".getBytes(), "f".getBytes(), "maxId".getBytes(), 1);
+                        long newMaxId = deviceTmpMaxIdTable.incrementColumnValue("r".getBytes(), "f".getBytes(), "maxid".getBytes(), 1);
                         long firstAccessTime = eventBean.getTimestamp();
 
                         // 填充字段

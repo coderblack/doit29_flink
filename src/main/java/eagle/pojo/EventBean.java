@@ -40,5 +40,7 @@ public class EventBean {
     // 如果是非注册用户，则这里表示首次到访时间
     private long firstAccessTime;
 
+    // 新老访客属性
+    private int isNew;
 
 }
