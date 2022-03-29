@@ -1,62 +1,47 @@
 package eagle.functions;
 
-import org.apache.commons.lang3.StringUtils;
-import org.apache.flink.api.java.tuple.Tuple2;
-import org.apache.flink.api.java.tuple.Tuple3;
+import eagle.pojo.AccountIdMapBean;
+import eagle.pojo.DeviceIdMapBean;
+import eagle.pojo.EventBean;
+import org.apache.flink.api.common.state.MapState;
+import org.apache.flink.api.common.state.MapStateDescriptor;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
 import org.apache.flink.util.Collector;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 
-public class IdMappingFunction extends KeyedProcessFunction<String, Tuple2<String, String>, Tuple3<String,String,Long>>{
-    Connection conn;
-    PreparedStatement stmt;
+public class IdMappingFunction extends KeyedProcessFunction<String, EventBean, EventBean> {
+
+    MapState<String, AccountIdMapBean> accountIdMapState;
+    MapState<String, DeviceIdMapBean> deviceIdMapState;
     @Override
     public void open(Configuration parameters) throws Exception {
-        conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/abc", "root", "123456");
-        stmt = conn.prepareStatement("select id from ums_memeber where account = ?");
-    }
 
-    @Override
-    public void processElement(Tuple2<String, String> value, KeyedProcessFunction<String, Tuple2<String, String>, Tuple3<String, String, Long>>.Context ctx, Collector<Tuple3<String, String, Long>> out) throws Exception {
-        // 1. 判断，日志数据中，是否有账号，如果有，则去查mysql中的业务表
-        if(StringUtils.isNotBlank(value.f1)){
-            stmt.setString(1,value.f1);
-            ResultSet resultSet = stmt.executeQuery();
-            Long guid = null;
-            while(resultSet.next()){
-                guid = resultSet.getLong("id");
-            }
-            out.collect(Tuple3.of(value.f0, value.f1, guid));
-        }else{
-            // 2. 如果没有账号，则去查hbase中的 设备-账号，绑定表
-            // 2.1  如果查到账号了，在去mysql业务表中查询对应的userid作为 结果
+        // 构造一个用于存储  账号->guid 信息的本地状态
+        MapStateDescriptor<String, AccountIdMapBean> accountIdMapStateDescriptor = new MapStateDescriptor<>("account_idmp_state", String.class, AccountIdMapBean.class);
+        accountIdMapState = getRuntimeContext().getMapState(accountIdMapStateDescriptor);
 
-
-            // 2.2 如果没查到账号，则去 hbase中的 空设备-临时id 映射表查 guid
-
-
-            // 2.2.1 如果查到了，输出结果
-
-
-            // 2.2.2 如果没查到，则去 对 hbase的计数器 递增，得到递增后的值作为结果输出，并且把结果数据，写入   “空设备-临时id” 表
-
-
-        }
-
-
-
+        // 构造一个用于存储  设备号->guid 信息的本地状态
+        MapStateDescriptor<String, DeviceIdMapBean> deviceIdMapStateDescriptor = new MapStateDescriptor<>("device_idmp_state", String.class, DeviceIdMapBean.class);
+        deviceIdMapState = getRuntimeContext().getMapState(deviceIdMapStateDescriptor);
 
     }
 
-
     @Override
-    public void close() throws Exception {
-        stmt.close();
-        conn.close();
+    public void processElement(EventBean eventBean, KeyedProcessFunction<String, EventBean, EventBean>.Context context, Collector<EventBean> collector) throws Exception {
+
+
+        // 判断是否有账号，如果有，则用账号在state中查询信息，如果state中没有，则去mysql中查询注册信息  ，并且查完后，放入state
+
+
+        // 如果没有账号，则用deviceid去state中查询，如果state中没有，则去hbase查询设备所绑定的账号，然后再查mysql，并且查完后，放入state
+
+
+        // 如果查不到所绑定的账号，则去  deviceid临时guid表查询
+
+
+        // 如果还查不到，则请求 hbase的技术进行增1，得到guid，并将结果插入 deviceid临时guid表
+
+
     }
 }
