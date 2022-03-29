@@ -34,11 +34,11 @@ import java.sql.ResultSet;
  * <p>
  * -- 表结构说明
  * rowKey:deviceId
- * family: f
+ * family: "f"
  * qualifier : 账号
  * value:  评分
  * ----------------------------------
- * rk      |      f           |
+ * rk      |      f             |
  * ---------------------------------
  * dev01     | ac01:100,ac02:80 |
  * ----------------------------------
@@ -47,8 +47,8 @@ import java.sql.ResultSet;
  * hbase>  create 'device_tmp_guid','f'
  * -- 表结构说明
  * rowKey:deviceId
- * family: f
- * qualifier : guid
+ * family: "f"
+ * qualifier : "guid"
  * value:  100000001
  * qualifier: ft  -- 首次到访时间
  * value:  137498587283123
