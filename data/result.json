@@ -1,0 +1,50 @@
+{
+  "status": "1",
+  "regeocode": {
+    "addressComponent": {
+      "city": "郑州市",
+      "province": "河南省",
+      "adcode": "410103",
+      "district": "二七区",
+      "towncode": "410103006000",
+      "streetNumber": {
+        "number": "13号",
+        "location": "113.649672,34.756957",
+        "direction": "西",
+        "distance": "34.2443",
+        "street": "建新东街"
+      },
+      "country": "中国",
+      "township": "五里堡街道",
+      "businessAreas": [
+        {
+          "location": "113.640765,34.754888",
+          "name": "五里堡",
+          "id": "410103"
+        },
+        {
+          "location": "113.655638,34.724284",
+          "name": "京广路",
+          "id": "410103"
+        },
+        {
+          "location": "113.656792,34.757421",
+          "name": "陈庄",
+          "id": "410103"
+        }
+      ],
+      "building": {
+        "name": [],
+        "type": []
+      },
+      "neighborhood": {
+        "name": [],
+        "type": []
+      },
+      "citycode": "0371"
+    },
+    "formatted_address": "河南省郑州市二七区五里堡街道京广快速路"
+  },
+  "info": "OK",
+  "infocode": "10000"
+}

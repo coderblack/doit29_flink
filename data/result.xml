@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<response>
+    <status>1</status>
+    <info>OK</info>
+    <infocode>10000</infocode>
+    <regeocode>
+        <formatted_address>河南省郑州市二七区五里堡街道京广快速路</formatted_address>
+        <addressComponent>
+            <country>中国</country>
+            <province>河南省</province>
+            <city>郑州市</city>
+            <citycode>0371</citycode>
+            <district>二七区</district>
+            <adcode>410103</adcode>
+            <township>五里堡街道</township>
+            <towncode>410103006000</towncode>
+            <neighborhood>
+                <name></name>
+                <type></type>
+            </neighborhood>
+            <building>
+                <name></name>
+                <type></type>
+            </building>
+            <streetNumber>
+                <street>建新东街</street>
+                <number>13号</number>
+                <location>113.649672,34.756957</location>
+                <direction>西</direction>
+                <distance>34.2443</distance>
+            </streetNumber>
+            <businessAreas type="list">
+                <businessArea>
+                    <location>113.640765,34.754888</location>
+                    <name>五里堡</name>
+                    <id>410103</id>
+                </businessArea>
+                <businessArea>
+                    <location>113.655638,34.724284</location>
+                    <name>京广路</name>
+                    <id>410103</id>
+                </businessArea>
+                <businessArea>
+                    <location>113.656792,34.757421</location>
+                    <name>陈庄</name>
+                    <id>410103</id>
+                </businessArea>
+            </businessAreas>
+        </addressComponent>
+    </regeocode>
+</response>

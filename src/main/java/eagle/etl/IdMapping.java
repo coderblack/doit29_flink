@@ -10,17 +10,24 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
+import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.tuple.Tuple;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple3;
+import org.apache.flink.connector.base.DeliveryGuarantee;
+import org.apache.flink.connector.kafka.sink.KafkaRecordSerializationSchema;
+import org.apache.flink.connector.kafka.sink.KafkaRecordSerializationSchemaBuilder;
+import org.apache.flink.connector.kafka.sink.KafkaSink;
 import org.apache.flink.connector.kafka.source.KafkaSource;
 import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer;
+import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
 import org.apache.flink.streaming.api.functions.ProcessFunction;
 import org.apache.flink.util.Collector;
+import org.apache.flink.util.OutputTag;
 import org.apache.kafka.clients.consumer.OffsetResetStrategy;
 
 import java.awt.*;
@@ -95,14 +102,34 @@ public class IdMapping {
                         e.printStackTrace();
                     }
 
+                    // 根据gps坐标生成 geohash码，并放入数据封装bean
                     bean.setGeoHashCode(geo);
                     return bean;
                 }).returns(EventBean.class)
-                .keyBy(bean -> bean.getGeoHashCode().substring(0,2))
-                .process(new DimensionKeyedProcessFunction());
+                // 根据geohash码的前2位进行keyBy
+                .keyBy(bean -> bean.getGeoHashCode().substring(0, 2))
+                // 进行地理位置维度信息（设备型号终端属性信息）等关联
+                .process(new DimensionKeyedProcessFunction());   //  在本算子中，会将那些查不到地理位置的gps坐标，输出到测流
+
+        // 获取测流
+        DataStream<String> unknownGpsStream = resultStream.getSideOutput(new OutputTag<String>("unknown_gps", TypeInformation.of(String.class)));
+
+        // 构造一个用于接收“未知gps坐标”的kafka sink
+        KafkaSink<String> unknownGpsSink = KafkaSink.<String>builder()
+                .setBootstrapServers("doit01:9092,doit02:9092,doit03:9092")
+                .setRecordSerializer(KafkaRecordSerializationSchema.<String>builder()
+                        .setValueSerializationSchema(new SimpleStringSchema())
+                        .setTopic("unknown-gps")
+                        .build())
+                .setDeliverGuarantee(DeliveryGuarantee.AT_LEAST_ONCE)
+                .build();
+
+        // 将测流数据，写入kafka sink
+        unknownGpsStream.sinkTo(unknownGpsSink);
+        //unknownGpsStream.print("unknown_gps");
 
 
-        resultStream.print();
+        resultStream.print("dwd_stream");
 
 
         env.execute();

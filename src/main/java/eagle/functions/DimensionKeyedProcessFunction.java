@@ -67,7 +67,7 @@ public class DimensionKeyedProcessFunction extends KeyedProcessFunction<String, 
 
                 }else {
                     // 如果不存在对应的参考点，则将当前的gps坐标放入一个测流输出，在另外一条线去请求高德来丰富地理位置维表数据
-                    context.output(unknownGps,eventBean.getLatitude()+","+eventBean.getLongitude());
+                    context.output(unknownGps,eventBean.getLongitude()+","+eventBean.getLatitude());
                 }
 
             }
