@@ -43,4 +43,12 @@ public class EventBean {
     // 新老访客属性
     private int isNew;
 
+    // geohash码
+    private String geoHashCode;
+
+    // 省市区维度字段
+    private String province;
+    private String city;
+    private String region;
+
 }

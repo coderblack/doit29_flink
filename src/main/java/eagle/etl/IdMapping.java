@@ -1,6 +1,8 @@
 package eagle.etl;
 
+import ch.hsr.geohash.GeoHash;
 import com.alibaba.fastjson.JSON;
+import eagle.functions.DimensionKeyedProcessFunction;
 import eagle.functions.IdMappingFunction;
 import eagle.pojo.EventBean;
 import org.apache.commons.lang.time.DateUtils;
@@ -53,30 +55,51 @@ public class IdMapping {
         });
 
 
+        // 清洗过滤
         SingleOutputStreamOperator<EventBean> resultStream = stream2.filter(bean -> StringUtils.isNotBlank(bean.getDeviceid())
                         && StringUtils.isNotBlank(bean.getEventid())
                         && bean.getTimestamp() > 1000000000000L
                         && bean.getProperties() != null
                 )
+                // 按设备号分区
                 .keyBy(bean -> bean.getDeviceid())
+                // idmapping映射
                 .process(new IdMappingFunction())
                 // 新老属性标记
                 .map(bean -> {
                     long firstAccessTime = bean.getFirstAccessTime();
                     long registerTime = bean.getRegisterTime();
                     // 判断上面的两个时间任意一个不是今天，则是老用户
-                    long  judeTime = firstAccessTime!=0? firstAccessTime : registerTime;
-
+                    long judeTime = firstAccessTime != 0 ? firstAccessTime : registerTime;
 
                     Date judeDate = new Date(judeTime);
                     Date today = new Date();
 
                     boolean sameDay = DateUtils.isSameDay(today, judeDate);
 
-                    bean.setIsNew(sameDay?1:0);
+                    bean.setIsNew(sameDay ? 1 : 0);
 
                     return bean;
-                }).returns(EventBean.class);
+                }).returns(EventBean.class)
+                // 关联hbase中的geohash地理位置维表、终端设备信息维表
+                // 考虑到算子状态的不便利（只有ListState），此处打算用keyedState
+                // 但是要用keyedState，就必须是在KeyedStream上下文中（必须keyBy之后）
+                // 需要设计一个合适的key，综合考虑后，用geohash码的前2位
+                .map(bean -> {
+                    double lat = bean.getLatitude();
+                    double lng = bean.getLongitude();
+                    String geo = "";
+                    try {
+                        geo = GeoHash.geoHashStringWithCharacterPrecision(lat, lng, 5);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+
+                    bean.setGeoHashCode(geo);
+                    return bean;
+                }).returns(EventBean.class)
+                .keyBy(bean -> bean.getGeoHashCode().substring(0,2))
+                .process(new DimensionKeyedProcessFunction());
 
 
         resultStream.print();

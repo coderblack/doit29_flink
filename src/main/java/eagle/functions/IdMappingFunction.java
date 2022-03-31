@@ -3,6 +3,7 @@ package eagle.functions;
 import eagle.pojo.AccountIdMapBean;
 import eagle.pojo.DeviceIdMapBean;
 import eagle.pojo.EventBean;
+import eagle.utils.HbaseConnUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.flink.api.common.state.MapState;
 import org.apache.flink.api.common.state.MapStateDescriptor;
@@ -110,18 +111,16 @@ public class IdMappingFunction extends KeyedProcessFunction<String, EventBean, E
 
 
         // 构造一个hbase的连接
-        org.apache.hadoop.conf.Configuration conf = HBaseConfiguration.create();
-        conf.set("hbase.zookeeper.quorum", "doit01:2181,doit02:2181,doit03:2181");
-        hbaseConn = ConnectionFactory.createConnection(conf);
+        hbaseConn = HbaseConnUtil.getConn();
 
         // 获取  设备账号绑定表
-        deviceBindTable = hbaseConn.getTable(TableName.valueOf("device_account_bind"));
+        deviceBindTable = this.hbaseConn.getTable(TableName.valueOf("device_account_bind"));
 
         // 获取  设备临时guid表
-        deviceTmpGuidTable = hbaseConn.getTable(TableName.valueOf("device_tmp_guid"));
+        deviceTmpGuidTable = this.hbaseConn.getTable(TableName.valueOf("device_tmp_guid"));
 
         // 获取  设备临时guid最大值计数器表
-        deviceTmpMaxIdTable = hbaseConn.getTable(TableName.valueOf("device_tmp_maxid"));
+        deviceTmpMaxIdTable = this.hbaseConn.getTable(TableName.valueOf("device_tmp_maxid"));
 
     }
 
