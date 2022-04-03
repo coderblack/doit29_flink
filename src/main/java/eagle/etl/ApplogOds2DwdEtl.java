@@ -33,9 +33,8 @@ import org.apache.kafka.clients.consumer.OffsetResetStrategy;
 import java.awt.*;
 import java.util.Date;
 
-public class IdMapping {
+public class ApplogOds2DwdEtl {
     public static void main(String[] args) throws Exception {
-
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
@@ -129,7 +128,14 @@ public class IdMapping {
         //unknownGpsStream.print("unknown_gps");
 
 
-        resultStream.print("dwd_stream");
+        // 将结果dwd数据落地到 doris和 kafka
+        // resultStream.print("dwd_stream");
+
+        // TODO 要对上面的dwd结果流，做加工： 将EventBean中的 properties字段，转成json串
+
+        // TODO 然后对上面加工后的数据流，注册成flinksql的表（视图）
+
+        // TODO 执行sql，从数据流表中select数据，insert 到 doris连接器的表 ， 同时，再 insert 一份 到 kafka 连接器表
 
 
         env.execute();

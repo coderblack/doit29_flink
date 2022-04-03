@@ -51,6 +51,5 @@ public class DoirsConnector {
 
         // 从source表查询数据后，写入sink表
         tenv.executeSql("insert into doris_table1 select siteid,citycode,username,pv from kfk_table1");
-
     }
 }

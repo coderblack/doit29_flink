@@ -153,6 +153,15 @@
         </dependency>
 
 
+        <!-- 自己本地编译的 flink-mysql-cdc.2.3.0.SNAPSHOT -->
+        <dependency>
+            <groupId>com.ververica</groupId>
+            <artifactId>flink-connector-mysql-cdc</artifactId>
+            <version>2.3-SNAPSHOT</version>
+        </dependency>
+
+
+        <!-- 显示引入guava18版本 -->
 
     </dependencies>
 
