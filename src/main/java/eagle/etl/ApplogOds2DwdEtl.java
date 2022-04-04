@@ -149,15 +149,35 @@ public class ApplogOds2DwdEtl {
         // 创建doris sink连接器表
         tenv.executeSql(SqlHolder.DORIS_DETAIL_SINK_DDL);
 
-        // 创建kafka sink连接器表
-        tenv.executeSql(SqlHolder.KAFKA_DETAIL_SINK_DDL);
+
 
 
         // 执行sql ，插入doris sink表
         tenv.executeSql(SqlHolder.DORIS_DETAIL_SINK_DML);
 
+
+
+        /*  // 创建kafka sink连接器表
+        tenv.executeSql(SqlHolder.KAFKA_DETAIL_SINK_DDL);
         // 执行sql ，插入kafka sink表
-        tenv.executeSql(SqlHolder.KAFKA_DETAIL_SINK_DML);
+        tenv.executeSql(SqlHolder.KAFKA_DETAIL_SINK_DML);*/
+
+
+
+        // 构造一个kafka的sink，用于写入dwd日志明细数据json格式
+        KafkaSink<String> kafkaDwdDetailSink = KafkaSink.<String>builder()
+                .setBootstrapServers("doit01:9092,doit02:9092,doit03:9092")
+                .setRecordSerializer(KafkaRecordSerializationSchema.<String>builder()
+                        .setValueSerializationSchema(new SimpleStringSchema())
+                        .setTopic("dwd-applog-detail")
+                        .build())
+                .setDeliverGuarantee(DeliveryGuarantee.AT_LEAST_ONCE)
+                .build();
+
+        // 将明细数据落入kafka
+        resultStream.map(bean -> JSON.toJSONString(bean))
+                .sinkTo(kafkaDwdDetailSink);
+
 
         env.execute();
 

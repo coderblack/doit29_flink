@@ -114,7 +114,7 @@ public class SqlHolder {
             "  'properties.bootstrap.servers' = 'doit01:9092,doit02:9092,doit03:9092',    \n" +
             "  'properties.group.id' = 'dwdsink',          \n" +
             "  'scan.startup.mode' = 'latest-offset',      \n" +
-            "  'format' = 'csv'                            \n" +
+            "  'format' = 'json'                            \n" +
             ")";
 
 
@@ -146,7 +146,7 @@ public class SqlHolder {
                     "  province         ,\n" +
                     "  city             ,\n" +
                     "  region           ,\n" +
-                    "  propsJson        ,\n" +
+                    "  propsJson         ,\n" +
                     "  dw_date           \n" +
                     "FROM logdetail"   ;
 }
