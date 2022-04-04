@@ -106,7 +106,7 @@ public class IdMappingFunction extends KeyedProcessFunction<String, EventBean, E
 
 
         // 构造一个jdbc的连接（并不需要用连接池）
-        conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/eagle?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai", "root", "123456");
+        conn = DriverManager.getConnection("jdbc:mysql://doit01:3306/abc?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai", "root", "ABC123.abc123");
         preparedStatement = conn.prepareStatement("select * from ums_member where account = ?");
 
 

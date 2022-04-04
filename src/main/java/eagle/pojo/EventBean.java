@@ -51,4 +51,7 @@ public class EventBean {
     private String city;
     private String region;
 
+    // properties的json格式字段
+    private String propsJson;
+
 }

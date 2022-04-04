@@ -5,6 +5,7 @@ import com.alibaba.fastjson.JSON;
 import eagle.functions.DimensionKeyedProcessFunction;
 import eagle.functions.IdMappingFunction;
 import eagle.pojo.EventBean;
+import eagle.utils.SqlHolder;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
@@ -26,6 +27,8 @@ import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
 import org.apache.flink.streaming.api.functions.ProcessFunction;
+import org.apache.flink.table.api.Schema;
+import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 import org.apache.flink.util.Collector;
 import org.apache.flink.util.OutputTag;
 import org.apache.kafka.clients.consumer.OffsetResetStrategy;
@@ -37,11 +40,12 @@ public class ApplogOds2DwdEtl {
     public static void main(String[] args) throws Exception {
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        StreamTableEnvironment tenv = StreamTableEnvironment.create(env);
 
         // 读取kafka中的用户行为日志数据流
         KafkaSource<String> source = KafkaSource.<String>builder()
                 .setBootstrapServers("doit01:9092,doit02:9092,doit03:9092")
-                .setStartingOffsets(OffsetsInitializer.committedOffsets(OffsetResetStrategy.LATEST))
+                .setStartingOffsets(OffsetsInitializer.latest())
                 .setGroupId("eagle-001")
                 .setValueOnlyDeserializer(new SimpleStringSchema())
                 .setTopics("eagle-applog")
@@ -52,21 +56,27 @@ public class ApplogOds2DwdEtl {
         // 真实数据：{"account":"gesw,azt","appid":"cn.doitedu.study.Yiee","appversion":"8.3","carrier":"360移动","deviceid":"CGDNHCPWUTQQ","devicetype":"IPHONE-8","eventid":"launch","ip":"155.74.103.111","latitude":34.756984446036,"longitude":113.65004531926762,"nettype":"WIFI","osname":"ios","osversion":"8.8","properties":{},"releasechannel":"酷市场-CoolMar","resolution":"1024*768","sessionid":"vtlmbxdo","timestamp":1645968611380}
         SingleOutputStreamOperator<EventBean> stream2 = sourceStream.map(new MapFunction<String, EventBean>() {
             @Override
-            public EventBean map(String json) throws Exception {
+            public EventBean map(String log) throws Exception {
 
-                EventBean eventBean = JSON.parseObject(json, EventBean.class);
+                EventBean eventBean = JSON.parseObject(log, EventBean.class);
+
+                // 将properties  HashMap 字段，生成 json 字段
+                // 做这个转换，主要是为了方便落入doris的表，因为doris不支持Map数据类型
+                String propsJson = JSON.toJSONString(eventBean.getProperties());
+                eventBean.setPropsJson(propsJson);
 
                 return eventBean;
             }
         });
 
 
-        // 清洗过滤
+        // ODS->DWD
+        // 清洗过滤、数据规范化、idmapping、省市区维度集成、手机终端信息维度集成、用户注册信息维度集成（公共维度信息--不管什么主题分析都需要用到的维度）
         SingleOutputStreamOperator<EventBean> resultStream = stream2.filter(bean -> StringUtils.isNotBlank(bean.getDeviceid())
-                        && StringUtils.isNotBlank(bean.getEventid())
-                        && bean.getTimestamp() > 1000000000000L
-                        && bean.getProperties() != null
-                )
+                && StringUtils.isNotBlank(bean.getEventid())
+                && bean.getTimestamp() > 1000000000000L
+                && bean.getProperties() != null
+        )
                 // 按设备号分区
                 .keyBy(bean -> bean.getDeviceid())
                 // idmapping映射
@@ -131,12 +141,23 @@ public class ApplogOds2DwdEtl {
         // 将结果dwd数据落地到 doris和 kafka
         // resultStream.print("dwd_stream");
 
-        // TODO 要对上面的dwd结果流，做加工： 将EventBean中的 properties字段，转成json串
+        // 注册成 flinksql的表（视图）
+        tenv.createTemporaryView("logdetail",resultStream, Schema.newBuilder()
+                .columnByExpression("dw_date","date_format(from_unixtime(`timestamp`/1000),'yyyy-MM-dd')")  // 衍生字段
+                .build());
 
-        // TODO 然后对上面加工后的数据流，注册成flinksql的表（视图）
+        // 创建doris sink连接器表
+        tenv.executeSql(SqlHolder.DORIS_DETAIL_SINK_DDL);
 
-        // TODO 执行sql，从数据流表中select数据，insert 到 doris连接器的表 ， 同时，再 insert 一份 到 kafka 连接器表
+        // 创建kafka sink连接器表
+        tenv.executeSql(SqlHolder.KAFKA_DETAIL_SINK_DDL);
 
+
+        // 执行sql ，插入doris sink表
+        tenv.executeSql(SqlHolder.DORIS_DETAIL_SINK_DML);
+
+        // 执行sql ，插入kafka sink表
+        tenv.executeSql(SqlHolder.KAFKA_DETAIL_SINK_DML);
 
         env.execute();
 
