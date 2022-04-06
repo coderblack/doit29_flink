@@ -149,4 +149,65 @@ public class SqlHolder {
                     "  propsJson         ,\n" +
                     "  dw_date           \n" +
                     "FROM logdetail"   ;
+
+
+
+    public static final String TRAFFIC_AGG_USER_SESSION =
+            "create view traffic_agg_user_session  as     select                                                               \n" +
+                    "  guid                                                                                \n" +
+                    "  ,splitSessionId                                                                     \n" +
+                    "  ,province                                                                           \n" +
+                    "  ,city                                                                               \n" +
+                    "  ,region                                                                             \n" +
+                    "  ,deviceType                                                                         \n" +
+                    "  ,isNew                                                                              \n" +
+                    "  ,releaseChannel                                                                     \n" +
+                    "  ,max(ts)-min(ts) as sessionTimeLong                                                 \n" +
+                    "  ,sum(if(eventId='pageload',1,0)) as sessionPv                                       \n" +
+                    "from traffic                                                                          \n" +
+                    "group by guid,splitSessionId,province,city,region,deviceType,isNew,releaseChannel   ";
+
+    public static final  String TRAFFIC_DIM_ANA_01 =
+                    "   select                                " +
+                    "     province                           " +
+                    "     ,city                               " +
+                    "     ,region                             " +
+                    "     ,deviceType                         " +
+                    "     ,releaseChannel                     " +
+                    "     ,isNew                              " +
+                    "     ,count(distinct guid) as uv         " +
+                    "     ,sum(sessionPv) as pv               " +
+                    "     ,sum(sessionTimeLong) as timeLong   " +
+                    "     ,count(1) as sessionCout            " +
+                    "   from traffic_agg_user_session         " +
+                    "   group by grouping sets(               " +
+                    "    ()                                   " +
+                    "    ,(releaseChannel)                    " +
+                    "    ,(releaseChannel,isNew)              " +
+                    "    ,(deviceType)                        " +
+                    "    ,(province,city,region)              " +
+                    "   )                                     " ;
+
+
+    public static final String Page_STAT_AGG =
+            "        create temporary view pageStatistic                      " +
+            "         as                                                      " +
+            "        select                                                   " +
+            "           pageId,                                               " +
+            "           sum(pageTimeLong) as pageTimeLong,                    " +
+            "           count(distinct splitSessionId) as sessionCnt,         " +
+            "           count(1)  as pagePv                                   " +
+            "           count(distinct guid)  as pageUv                       " +
+            "        from (                                                   " +
+            "            select                                               " +
+            "              pageId,pageLoadTime,splitSessionId,guid,           " +
+            "              max(ts) - min(ts) as pageTimeLong                  " +
+            "            from traffic                                         " +
+            "            where pageId is not null                             " +
+            "            group by pageId,pageLoadTime,splitSessionId,guid     " +
+            "        )tmp                                                     " +
+            "        group by pageId                                          ";
+
+
+
 }

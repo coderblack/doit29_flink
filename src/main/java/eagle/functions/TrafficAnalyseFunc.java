@@ -49,6 +49,8 @@ public class TrafficAnalyseFunc extends KeyedProcessFunction<Long, EventBean, Tr
                     , eventBean.getCity()
                     , eventBean.getRegion()
                     , eventBean.getDevicetype()
+                    , eventBean.getIsNew()
+                    , eventBean.getReleasechannel()
             );
             // 更新到beanState中
             beanState.update(trafficBean);
@@ -83,13 +85,42 @@ public class TrafficAnalyseFunc extends KeyedProcessFunction<Long, EventBean, Tr
         }
 
 
+        /**
+         * 用于处理空白时段定时输出“虚拟事件”的逻辑
+         */
+        // 删除之前定注册的定时器
+        if(timerState.value()!=null) context.timerService().deleteEventTimeTimer(timerState.value());
+
+        // 如果本次行为事件不是“放后台”和“app关闭” ,则要注册一个新的定时器
+        if(!eventBean.getEventid().equals("putback") && !eventBean.getEventid().equals("appclose")){
+            long newTimerTimer = eventBean.getTimestamp() + 5000L;
+            context.timerService().registerEventTimeTimer(newTimerTimer);
+            // 并且把这次注册的定时器时间，记录在  timerState状态中
+            timerState.update(newTimerTimer);
+        }
+
         collector.collect(beanState.value());
 
     }
 
     @Override
-    public void onTimer(long timestamp, OnTimerContext ctx, Collector<TrafficBean> out) throws Exception {
+    public void onTimer(long timestamp, OnTimerContext ctx, Collector<TrafficBean> collector) throws Exception {
+        // 定时器回调方法，一旦被触发，则输出一条虚拟的行为记录
+        TrafficBean trafficBean = beanState.value();
+        // 更新其中的eventId为一个虚拟事件id，更新其中的ts为当前的时间
+        trafficBean.setEventId("x001");
+        trafficBean.setTs(timestamp);
 
+        // 输出一条虚拟事件数据
+        collector.collect(trafficBean);
+
+        // 再次注册5s后的定时器
+        if(timestamp < beanState.value().getTs()){
+            long newTimerTime = timestamp + 5000L;
+            ctx.timerService().registerEventTimeTimer(newTimerTime);
+            // 将本次新注册的定时器时间，更新到 timerState中
+            timerState.update(newTimerTime);
+        }
 
     }
 }

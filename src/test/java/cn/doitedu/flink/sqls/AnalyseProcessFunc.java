@@ -72,6 +72,15 @@ public class AnalyseProcessFunc extends KeyedProcessFunction<Long, Traffic.Bean,
         collector.collect(bean);
     }
 
+    /**
+     * flink中的定時器，就是允许用户定义一个时间点，在系统的时间到达指定时间点时，可以自动触发一个方法onTimer来执行用户想执行的逻辑
+     * 每个定时器，都隐性地自动绑定在一个key上（定时器必须在keyby的上下文中才能使用）
+     * 同一个 key上，只能同时存在一个定时器（如果在一个key上注册多个定时器，系统将进行自动去重，只保留最后一个定时器）
+     * @param timestamp
+     * @param ctx
+     * @param out
+     * @throws Exception
+     */
     @Override
     public void onTimer(long timestamp, OnTimerContext ctx, Collector<Traffic.Bean> out) throws Exception {
         Traffic.Bean bean = beanState.value();

@@ -27,4 +27,6 @@ public class TrafficBean implements Serializable {
     private String city;
     private String region;
     private String deviceType;
+    private int isNew;
+    private String releaseChannel;
 }
