@@ -24,29 +24,29 @@ import java.time.format.DateTimeFormatter;
  * @wx haitao-duan
  * @date 2022/4/7
  *  mysql业务库中的两表订单表的建表语句：
-       CREATE TABLE `oms_order` (
-           `id` int(11) NOT NULL,
-           `member_id` int(11) DEFAULT NULL,
-           `amount` double(255,0) DEFAULT NULL,
-           `pay_type` int(255) DEFAULT NULL,
-           `order_source` int(255) DEFAULT NULL,
-           `order_status` int(11) DEFAULT NULL,
-           `create_time` datetime DEFAULT NULL,
-           `update_time` datetime DEFAULT NULL,
-           PRIMARY KEY (`id`)
-     ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+CREATE TABLE `oms_order` (
+`id` int(11) NOT NULL,
+`member_id` int(11) DEFAULT NULL,
+`amount` double(255,0) DEFAULT NULL,
+`pay_type` int(255) DEFAULT NULL,
+`order_source` int(255) DEFAULT NULL,
+`order_status` int(11) DEFAULT NULL,
+`create_time` datetime DEFAULT NULL,
+`update_time` datetime DEFAULT NULL,
+PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
  *
  *
-     CREATE TABLE `oms_order_item` (
-       `id` int(11) NOT NULL,
-       `order_id` int(11) DEFAULT NULL,
-       `product_id` int(11) DEFAULT NULL,
-       `price` double DEFAULT NULL,
-       `quantity` int(11) DEFAULT NULL,
-       `coupon_amount` double DEFAULT NULL,
-       `product_category_id` int(11) DEFAULT NULL,
-       PRIMARY KEY (`id`)
-     ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+CREATE TABLE `oms_order_item` (
+`id` int(11) NOT NULL,
+`order_id` int(11) DEFAULT NULL,
+`product_id` int(11) DEFAULT NULL,
+`price` double DEFAULT NULL,
+`quantity` int(11) DEFAULT NULL,
+`coupon_amount` double DEFAULT NULL,
+`product_category_id` int(11) DEFAULT NULL,
+PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
  *
  *
  **/
@@ -72,7 +72,7 @@ public class OrderAnalyse1 {
                         "   ,create_time  timestamp(3)         " +
                         "   ,update_time  timestamp(3)         " +
                         "   ,ptime  as    proctime()           " +             // 表达式字段：  tableapi     schema.builder().columnByExpression("ptime","proctime()")
-                     // "   ,watermark for update_time as update_time - interval '5' seconds" +   // 表达式字段：  tableapi     schema.builder().watermarkfor("update_time","update_time -interval '5' seconds ")
+                        // "   ,watermark for update_time as update_time - interval '5' seconds" +   // 表达式字段：  tableapi     schema.builder().watermarkfor("update_time","update_time -interval '5' seconds ")
                         "   ,PRIMARY KEY(id) NOT ENFORCED      " +
                         ") WITH (                              " +
                         "   'connector' = 'mysql-cdc',         " +
@@ -105,7 +105,11 @@ public class OrderAnalyse1 {
                         "   'table-name' = 'oms_order_item'       " +
                         ")                                        ";
 
+        // 创建sql中的cdc连接器表: oms_order
         tenv.executeSql(omsOrderDDL);
+        /*tenv.executeSql("desc flink_oms_order").print();*/
+
+        // 创建sql中的cdc连接器表: oms_order_item
         tenv.executeSql(omsOrderItemDDl);
 
         /**
@@ -144,7 +148,7 @@ public class OrderAnalyse1 {
         DataStream<Row> changelogStream = tenv.toChangelogStream(table);
 
         // 对changelog流中的数据进行过滤，只留下 rowKind=+I的数据
-        SingleOutputStreamOperator<Row> filtered = changelogStream.filter(row -> row.getKind().toByteValue() == 0);
+        SingleOutputStreamOperator<Row> filteredRowStream = changelogStream.filter(row -> row.getKind().toByteValue() == 0);
 
         // 将过滤好的row类型流，转成OmsOrderBean类型流
         /*SingleOutputStreamOperator<OmsOrderBean> omsBeanStream = filtered.map(row -> {
@@ -166,10 +170,10 @@ public class OrderAnalyse1 {
         */
 
         // 对于Row类型的datestream，转成sql视图时，可以不用先转成自定义bean，也能继续保留原来的schema
-        tenv.createTemporaryView("t_order",filtered, Schema.newBuilder()
-                .columnByExpression("ptime","proctime()")
+        tenv.createTemporaryView("t_order", filteredRowStream, Schema.newBuilder()
+                .columnByExpression("pt", "proctime()")  // 原来的表结构中，就有ptime字段（但是到了这已经丢失了时间语义属性），重新定一个名字为pt的处理时间语义字段
                 .build());
-        // tenv.executeSql("desc t_order").print();
+        /*tenv.executeSql("desc t_order").print();*/
 
 
         //  每10分钟统计一次最近1小时的订单总数，订单总额
@@ -180,22 +184,85 @@ public class OrderAnalyse1 {
                 "   count(1)  as order_cnt,                                                                     " +
                 "   sum(amount) as  order_amt                                                                   " +
                 "FROM TABLE(                                                                                    " +
-                "  HOP(table t_order ,descriptor(ptime), interval '10' minute ,interval '1' hour)               " +
+                "  HOP(table t_order ,descriptor(pt), interval '10' minute ,interval '1' hour)                  " +
                 ")                                                                                              " +
-                "GROUP BY window_start,window_end    ").print();
+                "GROUP BY window_start,window_end ")/*.print()*/;
 
 
-        // TODO 每10分钟统计一次最近1小时的，各种支付方式下的  订单总数和订单总额
+        // 每10分钟统计一次最近 1小时的，各种支付方式下的  订单总数和订单总额
+        tenv.executeSql(
+                "SELECT                                                                               " +
+                        "   window_start,                                                                      " +
+                        "   window_end,                                                                        " +
+                        "   pay_type,                                                                          " +
+                        "   count(1)  as order_cnt,                                                            " +
+                        "   sum(amount) as  order_amt                                                          " +
+                        "FROM TABLE(                                                                           " +
+                        "  HOP(table t_order ,descriptor(pt), interval '10' second ,interval '50' second)      " +
+                        ")                                                                                     " +
+                        "GROUP BY window_start,window_end,pay_type                                             ")/*.print()*/
+        ;
 
 
         // TODO 每10分钟统计一次最近1小时的，各品类，各支付方式下的   订单总数和订单总额
+        /**
+         * 首先，该需求中，需要根据支付方式和商品类的维度来统计，而oms_order中有支付方式，oms_order_item中有商品和品类
+         * 所以，需要将两个表先进行join，得到如下的宽表：
+         * -- 订单id,支付方式,订单总额,商品id,商品品类,购买件数,商品单价
+         *    o1,pay_type1,100,p1,c1,1,50
+         *    o1,pay_type1,100,p2,c2,2,20
+         *    o1,pay_type1,100,p3,c1,3,30
+         *    o2,pay_type2,200,p4,c2,1,50
+         *    o2,pay_type2,200,p2,c1,3,30
+         *    o2,pay_type2,200,p3,c1,2,20
+         */
+        // 先把oms_order_item表的changelog流，过滤出 +I的数据
+        Table omsOrderItemTable = tenv.from("flink_oms_order_item");
+        SingleOutputStreamOperator<Row> appendOmsOrderItemStream = tenv.toChangelogStream(omsOrderItemTable)
+                .filter(row -> row.getKind().toByteValue() == 0);
+        tenv.createTemporaryView("t_order_item",appendOmsOrderItemStream, Schema.newBuilder()
+                .columnByExpression("pt","proctime()")
+                .build());
 
+        /*tenv.executeSql(
+                "SELECT                                                              \n" +
+                        "   od.id,                                                   \n" +
+                        "   od.pay_type,                                             \n" +
+                        "   it.product_id,                                           \n" +
+                        "   it.product_category_id,                                  \n" +
+                        "   it.quantity,                                             \n" +
+                        "   it.price                                                 \n" +
+                        "FROM t_order od join t_order_item it on od.id=it.order_id   \n").print();*/
 
+        Table joinedTable = tenv.sqlQuery(
+                        "SELECT                                                                            \n" +
+                        "   od.id,                                                                         \n" +
+                        "   od.pay_type,                                                                   \n" +
+                        "   it.product_id,                                                                 \n" +
+                        "   it.product_category_id,                                                        \n" +
+                        "   it.quantity,                                                                   \n" +
+                        "   it.price                                                                       \n" +
+                        "FROM t_order od join t_order_item it on od.id=it.order_id                         \n");
+        tenv.createTemporaryView("order_detail",tenv.toDataStream(joinedTable), Schema.newBuilder()
+                .columnByExpression("pt","proctime()")
+                .build());
+
+        /*tenv.executeSql("desc order_detail").print();*/
+
+        tenv.executeSql(
+                "SELECT                                                                                  \n" +
+                        "    window_start,window_end,pay_type,product_category_id,                                \n" +
+                        "    count(distinct id) as order_cnt,                                                     \n" +
+                        "    sum(quantity * price ) as order_amt                                                  \n" +
+                        "FROM TABLE(                                                                              \n" +
+                        "  HOP(TABLE order_detail, descriptor(pt), interval '5' second ,interval '50' second)     \n" +
+                        ")                                                                                        \n" +
+                        "GROUP BY window_start,window_end,pay_type,product_category_id                            "
+        ).print();
 
         env.execute();
 
     }
-
 
 
 }
