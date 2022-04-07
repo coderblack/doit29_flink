@@ -208,6 +208,49 @@ public class SqlHolder {
             "        )tmp                                                     " +
             "        group by pageId                                          ";
 
+    /**
+     * 流量主题多维分析报表2：
+     *    按每小时段进行累计窗口统计各维度组合下的pv、uv、访问时长、会话数等
+     */
+    public static final String TRAFFIC_DIM_ANA_02
+            = "SELECT                                                                                                          " +
+            "   window_start,                                                                                                " +
+            "   window_end ,                                                                                                 " +
+            "   releaseChannel,                                                                                              " +
+            "   isNew,                                                                                                       " +
+            "   deviceType,                                                                                                  " +
+            "   province,                                                                                                    " +
+            "   city,                                                                                                        " +
+            "   region,                                                                                                      " +
+            "   count(distinct guid) as uv ,                                                                                 " +
+            "   sum(sessionPv) as pv,                                                                                        " +
+            "   sum(sessionTimeLong) as accTimeLong,                                                                         " +
+            "   count(1) as sessionCnt                                                                                       " +
+            "FROM TABLE(                                                                                                     " +
+            "  CUMULATE(TABLE traffic_agg_user_session,DESCRIPTOR(rt),INTERVAL '10' MINUTES, INTERVAL '60' MINUTES)          " +
+            ")                                                                                                               " +
+            "GROUP BY grouping sets(                                                                                         " +
+            "  (window_start,window_end,releaseChannel),                                                                     " +
+            "  (window_start,window_end,releaseChannel,isNew),                                                               " +
+            "  (window_start,window_end,deviceType),                                                                         " +
+            "  (window_start,window_end,province,city,region)                                                                " +
+            ")                                                                                                               ";
+
+
+    public static final String NEW_RETENTION_ANA
+            = "select                                                                                                                                                                                       " +
+            "   date_format(CURRENT_TIMESTAMP,'yyyy-MM-dd') AS CALC_DATE                                                                                                                                    " +
+            "  ,releaseChannle                                                                                                                                                                              " +
+            "  ,deviceType                                                                                                                                                                                  " +
+            "  ,sum(if( date_format(from_unixtime(nvl(registerTime,firstAccessTime)/1000),'yyyy-MM-dd') = date_format( timestampadd(day, -1, CURRENT_TIMESTAMP ), 'yyyy-MM-dd' ) ,1,0) ) as ret_1day        " +
+            "  ,sum(if( date_format(from_unixtime(nvl(registerTime,firstAccessTime)/1000),'yyyy-MM-dd') = date_format( timestampadd(day, -2, CURRENT_TIMESTAMP ), 'yyyy-MM-dd' ) ,1,0) ) as ret_2day        " +
+            "  ,sum(if( date_format(from_unixtime(nvl(registerTime,firstAccessTime)/1000),'yyyy-MM-dd') = date_format( timestampadd(day, -3, CURRENT_TIMESTAMP ), 'yyyy-MM-dd' ) ,1,0) ) as ret_3day        " +
+            "  ,sum(if( date_format(from_unixtime(nvl(registerTime,firstAccessTime)/1000),'yyyy-MM-dd') = date_format( timestampadd(day, -4, CURRENT_TIMESTAMP ), 'yyyy-MM-dd' ) ,1,0) ) as ret_4day        " +
+            "  ,sum(if( date_format(from_unixtime(nvl(registerTime,firstAccessTime)/1000),'yyyy-MM-dd') = date_format( timestampadd(day, -5, CURRENT_TIMESTAMP ), 'yyyy-MM-dd' ) ,1,0) ) as ret_5day        " +
+            "  ,sum(if( date_format(from_unixtime(nvl(registerTime,firstAccessTime)/1000),'yyyy-MM-dd') = date_format( timestampadd(day, -6, CURRENT_TIMESTAMP ), 'yyyy-MM-dd' ) ,1,0) ) as ret_6day        " +
+            "  ,sum(if( date_format(from_unixtime(nvl(registerTime,firstAccessTime)/1000),'yyyy-MM-dd') = date_format( timestampadd(day, -7, CURRENT_TIMESTAMP ), 'yyyy-MM-dd' ) ,1,0) ) as ret_7day        " +
+            "from traffic                                                                                                                                                                                   " +
+            "group by releaseChannle,deviceType                                                                                                                                                             ";
 
 
 }

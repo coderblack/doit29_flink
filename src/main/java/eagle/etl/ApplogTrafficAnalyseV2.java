@@ -31,7 +31,7 @@ public class ApplogTrafficAnalyseV2 {
 
         StreamTableEnvironment tenv = StreamTableEnvironment.create(env);
 
-        // 构造一个kafka的source
+        // 构造一个 kafka 的source
         KafkaSource<String> kafkaSource = KafkaSource.<String>builder()
                 .setTopics("dwd-applog-detail")
                 .setBootstrapServers("doit01:9092,doit02:9092,doit03:9092")
@@ -118,18 +118,37 @@ public class ApplogTrafficAnalyseV2 {
          *   今日截止到当前，uv数最高的前20个页面
          *   今日截止到当前，停留时长最长的前20个页面
          */
-        // 统计每个页面的停留时长，会话数，pv数 ,将结果创建成一个临时视图 pageStatistic
+        // 先统计每个页面的停留时长，会话数，pv数 ,将结果创建成一个临时视图 pageStatistic
         tenv.executeSql(SqlHolder.Page_STAT_AGG);
-        // tenv.executeSql("select * from pageStatistic").print();
-
         // 统计截止到当前，pv数最大的前20个页面
         tenv.executeSql("select * from pageStatistic order by pagePv desc  limit 20");
-
         // 统计截止到当前，uv数最大的前20个页面
         tenv.executeSql("select * from pageStatistic order by pageUv desc  limit 20");
-
         // 统计截止到当前，停留时长最大的前20个页面
         tenv.executeSql("select * from pageStatistic order by pageTimeLong desc  limit 20");
+
+
+        /**
+         * 流量分析，累计窗口统计
+         *   今日每一个小时段，各渠道的             uv ,pv,累计访问时长和访问次数
+         *   今日每一个小时段，各渠道的新、老        uv ,pv,累计访问时长和访问次数
+         *   今日每一个小时段，各类终端型号的        uv ,pv,累计访问时长和访问次数
+         *   今日每一个小时段，各类终端型号的        uv ,pv,累计访问时长和访问次数
+         *   今日每一个小时段，各省市区的           uv ,pv,累计访问时长和访问次数
+         */
+        tenv.executeSql(SqlHolder.TRAFFIC_DIM_ANA_02);
+
+
+
+
+
+
+
+
+
+
+
+
 
         env.execute();
     }
