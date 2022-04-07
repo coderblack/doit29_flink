@@ -1,9 +1,6 @@
 package cn.doitedu.flink.demos;
 
 import org.apache.flink.api.common.functions.MapFunction;
-import org.apache.flink.api.common.typeinfo.TypeHint;
-import org.apache.flink.api.common.typeinfo.TypeInformation;
-import org.apache.flink.api.java.tuple.Tuple4;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -11,11 +8,7 @@ import org.apache.flink.table.api.*;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 import org.apache.flink.table.connector.ChangelogMode;
 import org.apache.flink.types.Row;
-import pojos.Pojo;
-import pojos.Student;
-
-import javax.xml.crypto.Data;
-import java.util.Arrays;
+import cn.doitedu.flink.pojos.Student;
 
 /***
  * @author hunter.d

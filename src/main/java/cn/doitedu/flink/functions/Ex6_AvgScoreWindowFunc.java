@@ -3,7 +3,7 @@ package cn.doitedu.flink.functions;
 import org.apache.flink.streaming.api.functions.windowing.WindowFunction;
 import org.apache.flink.streaming.api.windowing.windows.GlobalWindow;
 import org.apache.flink.util.Collector;
-import pojos.Score;
+import cn.doitedu.flink.pojos.Score;
 
 public class Ex6_AvgScoreWindowFunc implements WindowFunction<Score, String, String, GlobalWindow> {
     // s : 当前的key

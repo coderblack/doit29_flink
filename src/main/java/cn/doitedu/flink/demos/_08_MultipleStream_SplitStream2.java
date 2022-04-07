@@ -8,7 +8,7 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.ProcessFunction;
 import org.apache.flink.util.Collector;
 import org.apache.flink.util.OutputTag;
-import pojos.Student;
+import cn.doitedu.flink.pojos.Student;
 
 public class _08_MultipleStream_SplitStream2 {
 

@@ -4,7 +4,7 @@ import org.apache.flink.api.common.functions.RichMapFunction;
 import org.apache.flink.api.common.state.MapState;
 import org.apache.flink.api.common.state.MapStateDescriptor;
 import org.apache.flink.configuration.Configuration;
-import pojos.EventLog;
+import cn.doitedu.flink.pojos.EventLog;
 
 public class _15_EventsCntMapFunc extends RichMapFunction<EventLog,String> {
 

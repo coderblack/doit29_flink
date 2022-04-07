@@ -4,17 +4,11 @@ import cn.doitedu.flink.functions._15_ChannelEventsCntMapFunc;
 import cn.doitedu.flink.functions.Ex1_MapFunc;
 import cn.doitedu.flink.functions._15_EventsCntMapFunc;
 import cn.doitedu.flink.functions._15_LatestEventsMapFunc;
-import org.apache.flink.api.common.state.ValueState;
-import org.apache.flink.api.common.state.ValueStateDescriptor;
-import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.datastream.KeyedStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
-import org.apache.flink.util.Collector;
-import pojos.EventLog;
-import scala.Int;
+import cn.doitedu.flink.pojos.EventLog;
 
 /**
  * 演示各种keyed state的使用

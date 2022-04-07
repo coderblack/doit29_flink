@@ -1,13 +1,12 @@
 package cn.doitedu.flink.functions;
 
-import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.functions.RichMapFunction;
 import org.apache.flink.api.common.state.StateTtlConfig;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
 import org.apache.flink.api.common.time.Time;
 import org.apache.flink.configuration.Configuration;
-import pojos.EventLog;
+import cn.doitedu.flink.pojos.EventLog;
 
 public class _15_ChannelEventsCntMapFunc extends RichMapFunction<EventLog, String> {
 

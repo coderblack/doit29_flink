@@ -3,7 +3,7 @@ package cn.doitedu.flink.functions;
 import org.apache.flink.streaming.api.functions.windowing.AllWindowFunction;
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.util.Collector;
-import pojos.EventLog;
+import cn.doitedu.flink.pojos.EventLog;
 
 public class Ex3_WindowFunc1 implements AllWindowFunction<EventLog, String, TimeWindow> {
     @Override

@@ -5,7 +5,7 @@ import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.co.CoMapFunction;
-import pojos.Student;
+import cn.doitedu.flink.pojos.Student;
 
 public class _09_MultipleStream_connect {
 

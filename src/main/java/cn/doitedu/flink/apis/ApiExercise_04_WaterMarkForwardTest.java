@@ -10,7 +10,7 @@ import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindo
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.util.Collector;
-import pojos.Score;
+import cn.doitedu.flink.pojos.Score;
 
 import java.time.Duration;
 

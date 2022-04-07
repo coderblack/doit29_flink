@@ -1,4 +1,4 @@
-package pojos;
+package cn.doitedu.flink.pojos;
 
 import lombok.*;
 

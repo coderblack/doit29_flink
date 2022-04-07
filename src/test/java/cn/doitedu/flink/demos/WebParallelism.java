@@ -1,11 +1,10 @@
 package cn.doitedu.flink.demos;
 
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.datastream.KeyedStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import pojos.Student;
+import cn.doitedu.flink.pojos.Student;
 
 /***
  * @author hunter.d

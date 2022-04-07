@@ -13,7 +13,7 @@ import org.apache.flink.streaming.api.windowing.assigners.SlidingProcessingTimeW
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.util.Collector;
-import pojos.AccessLog;
+import cn.doitedu.flink.pojos.AccessLog;
 
 import java.util.HashSet;
 

@@ -1,7 +1,7 @@
 package cn.doitedu.flink.functions;
 
 import org.apache.flink.api.common.functions.MapFunction;
-import pojos.Score;
+import cn.doitedu.flink.pojos.Score;
 
 public class Ex6_Str2ScoreMapFunc implements MapFunction<String, Score> {
     @Override

@@ -2,7 +2,7 @@ package cn.doitedu.flink.functions;
 
 import org.apache.flink.api.common.functions.AggregateFunction;
 import org.apache.flink.api.java.tuple.Tuple2;
-import pojos.Score;
+import cn.doitedu.flink.pojos.Score;
 
 /**
  * 求平均成绩的自定义窗口聚合函数（增量聚合）

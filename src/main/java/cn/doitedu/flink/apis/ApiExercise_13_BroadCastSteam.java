@@ -8,8 +8,8 @@ import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.co.BroadcastProcessFunction;
 import org.apache.flink.util.Collector;
-import pojos.StuInfo;
-import pojos.Student;
+import cn.doitedu.flink.pojos.StuInfo;
+import cn.doitedu.flink.pojos.Student;
 
 /**
  * 广播流的使用示例

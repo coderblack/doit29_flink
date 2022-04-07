@@ -4,7 +4,7 @@ import org.apache.flink.api.common.functions.RichMapFunction;
 import org.apache.flink.api.common.state.ListState;
 import org.apache.flink.api.common.state.ListStateDescriptor;
 import org.apache.flink.configuration.Configuration;
-import pojos.EventLog;
+import cn.doitedu.flink.pojos.EventLog;
 
 import java.util.Iterator;
 

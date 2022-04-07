@@ -1,7 +1,7 @@
 package cn.doitedu.flink.functions;
 
 import org.apache.flink.api.common.functions.ReduceFunction;
-import pojos.Score;
+import cn.doitedu.flink.pojos.Score;
 
 /**
  * 求分数之和，别的字段用最新的数据代替

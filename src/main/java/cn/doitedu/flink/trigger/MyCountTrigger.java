@@ -3,7 +3,7 @@ package cn.doitedu.flink.trigger;
 import org.apache.flink.streaming.api.windowing.triggers.Trigger;
 import org.apache.flink.streaming.api.windowing.triggers.TriggerResult;
 import org.apache.flink.streaming.api.windowing.windows.GlobalWindow;
-import pojos.EventLog;
+import cn.doitedu.flink.pojos.EventLog;
 
 public class MyCountTrigger extends Trigger<EventLog, GlobalWindow> {
     /**

@@ -3,7 +3,7 @@ package cn.doitedu.flink.trigger;
 import org.apache.flink.streaming.api.windowing.evictors.Evictor;
 import org.apache.flink.streaming.api.windowing.windows.GlobalWindow;
 import org.apache.flink.streaming.runtime.operators.windowing.TimestampedValue;
-import pojos.EventLog;
+import cn.doitedu.flink.pojos.EventLog;
 
 import java.util.Iterator;
 

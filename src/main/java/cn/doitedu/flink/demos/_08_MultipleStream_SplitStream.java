@@ -2,9 +2,8 @@ package cn.doitedu.flink.demos;
 
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
-import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import pojos.Student;
+import cn.doitedu.flink.pojos.Student;
 
 public class _08_MultipleStream_SplitStream {
     public static void main(String[] args) throws Exception {

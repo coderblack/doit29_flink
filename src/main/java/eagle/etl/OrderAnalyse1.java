@@ -1,8 +1,22 @@
 package eagle.etl;
 
+import eagle.pojo.OmsOrderBean;
+import lombok.*;
 import org.apache.flink.streaming.api.CheckpointingMode;
+import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.table.api.Schema;
+import org.apache.flink.table.api.Table;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
+import org.apache.flink.table.connector.ChangelogMode;
+import org.apache.flink.types.Row;
+
+import java.io.Serializable;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 
 /***
  * @author hunter.d
@@ -45,6 +59,7 @@ public class OrderAnalyse1 {
         env.getCheckpointConfig().setCheckpointStorage("file:///d:/ckpt");
 
         StreamTableEnvironment tenv = StreamTableEnvironment.create(env);
+        tenv.getConfig().setLocalTimeZone(ZoneId.of("Asia/Shanghai"));
 
         String omsOrderDDL =
                 "CREATE TABLE flink_oms_order (                " +
@@ -56,6 +71,8 @@ public class OrderAnalyse1 {
                         "   ,order_status int                  " +
                         "   ,create_time  timestamp(3)         " +
                         "   ,update_time  timestamp(3)         " +
+                        "   ,ptime  as    proctime()           " +             // 表达式字段：  tableapi     schema.builder().columnByExpression("ptime","proctime()")
+                     // "   ,watermark for update_time as update_time - interval '5' seconds" +   // 表达式字段：  tableapi     schema.builder().watermarkfor("update_time","update_time -interval '5' seconds ")
                         "   ,PRIMARY KEY(id) NOT ENFORCED      " +
                         ") WITH (                              " +
                         "   'connector' = 'mysql-cdc',         " +
@@ -76,6 +93,7 @@ public class OrderAnalyse1 {
                         "   ,quantity  INT                        " +
                         "   ,coupon_amount DOUBLE                 " +
                         "   ,product_category_id INT              " +
+                        "   ,ptime   as    proctime()             " +
                         "   ,PRIMARY KEY(id) NOT ENFORCED         " +
                         ") WITH (                                 " +
                         "   'connector' = 'mysql-cdc',            " +
@@ -87,19 +105,91 @@ public class OrderAnalyse1 {
                         "   'table-name' = 'oms_order_item'       " +
                         ")                                        ";
 
+        tenv.executeSql(omsOrderDDL);
         tenv.executeSql(omsOrderItemDDl);
-        tenv.executeSql("select * from flink_oms_order_item").print();
 
         /**
-         * 截止到当前的                订单总数，订单总额
-         * 截止到当前的各品类商品的     订单总数，购买总额
-         * 截止到当前的各种支付方式下的 订单总数，订单总额
+         * 今天截止到当前的            订单总数，订单总额
+         * 最近1小时的                订单总数，订单总额（每10分钟更新一次）
          * 最近1小时的订单总数，订单总额（每10分钟更新一次）
+         * 截止到当前的各种支付方式下的 订单总数，订单总额
+         * 截止到当前的各品类商品的     订单总数，购买总额
          * 最近1小时购买数量最多的前5个品类、商品（每10分钟更新一次）
          * 最近1小时购买金额最大的前5个品类、商品（每10分钟更新一次）
          * 最近1小时使用优惠券抵扣金额最多的前10个商品（每10分钟更新一次）
          */
 
+        // 截止到当前的  订单总数，订单总额
+        // 测试flinksql中对  date类型和 string类型进行比较的时候，是否会自动隐式转换
+        // tenv.executeSql("select  DATE_FORMAT(create_time,'yyyy-MM-dd') ,current_date , DATE_FORMAT(create_time,'yyyy-MM-dd') = current_date from flink_oms_order").print();
+        /*tenv.executeSql("select  count(1) as order_cnt ,sum(amount) as order_amt from flink_oms_order where  DATE_FORMAT(create_time,'yyyy-MM-dd')=current_date").print();*/
+
+
+        // 最近 1小时的 订单总数，订单总额（每10分钟更新一次）
+        // 直接在cdc的源表上进行 TVF窗口统计，是不支持的； （ TVF窗口聚合，不支持 cdc流中的 update和 delete变化 ）
+        /*tenv.executeSql(
+                "SELECT                                                                               " +
+                "   window_start,                                                                              " +
+                "   window_end,                                                                                " +
+                "   count(1)  as order_cnt,                                                                    " +
+                "   sum(amount) as  order_amt                                                                  " +
+                "FROM TABLE(                                                                                   " +
+                "  HOP(table flink_oms_order ,descriptor(ptime), interval '5' second ,interval '10' second)    " +
+                ")                                                                                             " +
+                "GROUP BY window_start,window_end                                                              ").print();*/
+
+        // 所以，需要对cdc的源表进行转换，留下我们需要的 “变化”类型(+I)  数据
+        Table table = tenv.from("flink_oms_order");
+        // 将表对象，转成changelog流
+        DataStream<Row> changelogStream = tenv.toChangelogStream(table);
+
+        // 对changelog流中的数据进行过滤，只留下 rowKind=+I的数据
+        SingleOutputStreamOperator<Row> filtered = changelogStream.filter(row -> row.getKind().toByteValue() == 0);
+
+        // 将过滤好的row类型流，转成OmsOrderBean类型流
+        SingleOutputStreamOperator<OmsOrderBean> omsBeanStream = filtered.map(row -> {
+
+            Integer id = row.<Integer>getFieldAs(0);
+            Integer member_id = row.<Integer>getFieldAs(1);
+            double amount = row.<Double>getFieldAs(2);
+            Integer pay_type = row.<Integer>getFieldAs(3);
+            Integer order_source = row.<Integer>getFieldAs(4);
+            Integer order_status = row.<Integer>getFieldAs(5);
+            LocalDateTime create_time = row.<LocalDateTime>getFieldAs(6);
+            LocalDateTime update_time = row.<LocalDateTime>getFieldAs(7);
+
+            return new OmsOrderBean(id, member_id, amount, pay_type, order_source, order_status, create_time, update_time);
+        });
+
+        // 将 bean类型的流，转成 sql表
+        tenv.createTemporaryView("t_order",omsBeanStream, Schema.newBuilder()
+                .columnByExpression("ptime","proctime()")
+                .build());
+
+        //  每10分钟统计一次最近1小时的订单总数，订单总额
+        tenv.executeSql(
+                "SELECT                                                                                " +
+                "   window_start,                                                                               " +
+                "   window_end,                                                                                 " +
+                "   count(1)  as order_cnt,                                                                     " +
+                "   sum(amount) as  order_amt                                                                   " +
+                "FROM TABLE(                                                                                    " +
+                "  HOP(table t_order ,descriptor(ptime), interval '10' minute ,interval '1' hour)               " +
+                ")                                                                                              " +
+                "GROUP BY window_start,window_end    ").print();
+
+
+        // TODO 每10分钟统计一次最近1小时的，各种支付方式下的  订单总数和订单总额
+
+
+        // TODO 每10分钟统计一次最近1小时的，各品类，各支付方式下的   订单总数和订单总额
+
+
+
+        env.execute();
 
     }
+
+
+
 }

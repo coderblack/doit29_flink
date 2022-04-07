@@ -3,23 +3,16 @@ package cn.doitedu.flink.apis;
 import cn.doitedu.flink.functions.Ex1_FlatMap1;
 import cn.doitedu.flink.functions.Ex1_MapFunc;
 import cn.doitedu.flink.functions.Ex3_WindowFunc1;
-import org.apache.flink.api.common.eventtime.SerializableTimestampAssigner;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
-import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
-import org.apache.flink.connector.kafka.source.KafkaSource;
-import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.functions.windowing.AllWindowFunction;
 import org.apache.flink.streaming.api.windowing.assigners.SlidingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
-import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.util.OutputTag;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import pojos.EventLog;
+import cn.doitedu.flink.pojos.EventLog;
 
 import java.time.Duration;
 

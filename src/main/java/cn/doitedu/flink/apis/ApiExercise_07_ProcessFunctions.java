@@ -15,7 +15,7 @@ import org.apache.flink.streaming.api.windowing.windows.GlobalWindow;
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.util.Collector;
 import org.apache.flink.util.OutputTag;
-import pojos.Score;
+import cn.doitedu.flink.pojos.Score;
 
 /**
  * 各类 process function 演示大合集
