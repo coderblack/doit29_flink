@@ -147,8 +147,7 @@ public class OrderAnalyse1 {
         SingleOutputStreamOperator<Row> filtered = changelogStream.filter(row -> row.getKind().toByteValue() == 0);
 
         // 将过滤好的row类型流，转成OmsOrderBean类型流
-        SingleOutputStreamOperator<OmsOrderBean> omsBeanStream = filtered.map(row -> {
-
+        /*SingleOutputStreamOperator<OmsOrderBean> omsBeanStream = filtered.map(row -> {
             Integer id = row.<Integer>getFieldAs(0);
             Integer member_id = row.<Integer>getFieldAs(1);
             double amount = row.<Double>getFieldAs(2);
@@ -160,11 +159,18 @@ public class OrderAnalyse1 {
 
             return new OmsOrderBean(id, member_id, amount, pay_type, order_source, order_status, create_time, update_time);
         });
-
         // 将 bean类型的流，转成 sql表
         tenv.createTemporaryView("t_order",omsBeanStream, Schema.newBuilder()
                 .columnByExpression("ptime","proctime()")
                 .build());
+        */
+
+        // 对于Row类型的datestream，转成sql视图时，可以不用先转成自定义bean，也能继续保留原来的schema
+        tenv.createTemporaryView("t_order",filtered, Schema.newBuilder()
+                .columnByExpression("ptime","proctime()")
+                .build());
+        // tenv.executeSql("desc t_order").print();
+
 
         //  每10分钟统计一次最近1小时的订单总数，订单总额
         tenv.executeSql(
